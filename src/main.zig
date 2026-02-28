@@ -5,7 +5,6 @@ const stats = @import("stats");
 
 pub fn main(init: std.process.Init) !void {
     //const arena: std.mem.Allocator = init.arena.allocator();
-
     const io = init.io;
 
     var stdout_buffer: [1024]u8 = undefined;
@@ -21,12 +20,18 @@ pub fn main(init: std.process.Init) !void {
     var prng = std.Random.DefaultPrng.init(seed);
     const rng = prng.random();
 
-    var exp: stats.Exponential = .init(2, 1); 
-    const dexp: *stats.Distribution = &exp.interface; //ptr distribution
+    var exp: stats.Exponential(f32) = .init(2); 
+    const dexp: *stats.Distribution(f32) = &exp.interface; //ptr distribution
     const ed = dexp.sample(rng);
-    
+   
+    var sample: [40]f64 = undefined;
+    dexp.sampleBuffer(&sample, rng);
+
     try stdout_writer.print("{d}\n", .{ed});
+    try stdout_writer.print("{any}\n", .{sample});
+
     try stdout_writer.flush(); // Don't forget to flush!
+    
 }
 
 

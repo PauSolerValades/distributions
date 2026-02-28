@@ -1,22 +1,31 @@
 const std = @import("std");
 const Random = std.Random;
 
-pub const VTable = struct {
-    sample: *const fn (dist: *Distribution, rng: Random) f64,
-};
-
-pub const Distribution = @This();
-
-vtable: *const VTable,
-
-pub inline fn sample(self: *Distribution, rng: Random) f64 {
-    return self.vtable.sample(self, rng);
+pub fn VTable(comptime Precision: type) type {
+    return struct {
+        sample: *const fn (dist: *Distribution(Precision), rng: Random) Precision,
+    };
 }
 
-// here should go common functions that behave the same for all the functionalities
-// that is, for example, fill a buffer with n samples. samples has to be the implemented
-// and the nSamples is here and just calls samples.
+pub fn Distribution(comptime Precision: type) type {
+   //const Self = @This();
+    return struct {
+        vtable: *const VTable(Precision),
 
+        pub inline fn sample(self: *Distribution(Precision), rng: Random) Precision {
+            return self.vtable.sample(self, rng);
+        }
 
+        // here should go common functions that behave the same for all the functionalities
+        // that is, for example, fill a buffer with n samples. samples has to be the implemented
+        // and the nSamples is here and just calls samples.
+
+        pub inline fn sampleBuffer(self: *Distribution(Precision), buffer: []f64, rng: Random) void {
+            for (0..buffer.len) |i| {
+                buffer[i] = self.vtable.sample(self, rng);
+            }
+        }
+    };
+}
 
 
