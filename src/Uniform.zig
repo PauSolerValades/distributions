@@ -4,6 +4,9 @@ const Random = std.Random;
 
 const Distribution = @import("Distribution.zig").Distribution;
 
+/// Implementation of the Uniform Distribution:
+/// $ f(x) = frac(1, b-a) $
+/// $ F(x) = 
 pub fn Uniform(comptime Precision: type) type {
     
     return struct {
@@ -13,8 +16,8 @@ pub fn Uniform(comptime Precision: type) type {
         a: Precision,
         b: Precision,
         interface: PDist,
-
-        /// Sample function to call without the interface
+    
+        // uses the rng instance to get a float between 0 and 1 and then scales it
         pub inline fn sample(self: *Self, rng: Random) Precision {
             return self.a + (self.b - self.a) * rng.float(Precision);
         }

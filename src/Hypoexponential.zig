@@ -1,34 +1,37 @@
-pub const HypoExponential = @This();
-
 const std = @import("std");
-const assert = std.debug.assert;
+const Random = std.Random;
 
 const Distribution = @import("Distribution.zig").Distribution;
 
-rates: []const f64,
-dimensions: u64,
-interface: Distribution,
+pub fn HypoExponential(comptime Precision: type) type {
+    return struct {
+        pub const Self = @This();
+        rates: []const Precision,
+        dimensions: u64,
+        interface: Distribution(Precision),
 
-pub inline fn sample(self: *HypoExponential, rng: Random) f64 {
-    var sum: f64 = 0.0;
-    for (self.rates) |lambda| {
-        const u = rng.float(f64);
-        sum += (1.0 / lambda) * (-@log(u));
-    }
-    return sum;
-}
+        pub fn sample(self: *Self, rng: Random) Precision {
+            var sum: Precision = 0.0;
+            for (self.rates) |lambda| {
+                const u = rng.float(Precision);
+                sum += (1.0 / lambda) * (-@log(u));
+            }
+            return sum;
+        }
 
-fn sampleImpl(dist: *Distribution, rng: Random) f64 {
-    const self: *HypoExponential = @alignCast(@fieldParentPtr("interface", dist));
-    return self.sample(rng);
-}
+        pub fn sampleImpl(dist: *Distribution(Precision), rng: Random) Precision {
+            const self: *Self = @alignCast(@fieldParentPtr("interface", dist));
+            return self.sample(rng);
+        }
 
-pub fn init(rates: []const f64, dimensions: u64) HypoExponential {
-    return .{
-        .rates = rates,
-        .dimensions = dimensions,
-        .interface = .{ .vtable = &.{ .sample = sampleImpl } }
+        pub fn init(rates: []const Precision, dimensions: u64) @This() {
+            return .{
+                .rates = rates,
+                .dimensions = dimensions,
+                .interface = Distribution(Precision){ 
+                    .vtable = &.{ .sample = sampleImpl } 
+                },
+            };
+        }
     };
 }
-
-
