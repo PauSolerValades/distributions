@@ -20,7 +20,7 @@ pub fn Distribution(comptime Precision: type) type {
         // that is, for example, fill a buffer with n samples. samples has to be the implemented
         // and the nSamples is here and just calls samples.
 
-        pub inline fn sampleBuffer(self: *Distribution(Precision), buffer: []f64, rng: Random) void {
+        pub inline fn sampleBuffer(self: *Distribution(Precision), buffer: []Precision, rng: Random) void {
             for (0..buffer.len) |i| {
                 buffer[i] = self.vtable.sample(self, rng);
             }
