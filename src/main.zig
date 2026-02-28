@@ -6,6 +6,7 @@ const stats = @import("stats");
 const Unif = stats.Uniform(f32);
 const Exp = stats.Exponential(f32);
 const Dist = stats.Distribution(f32);
+const Const = stats.Constant(f32);
 
 pub fn main(init: std.process.Init) !void {
     //const arena: std.mem.Allocator = init.arena.allocator();
@@ -51,6 +52,19 @@ pub fn main(init: std.process.Init) !void {
     try stdout_writer.print("No interface: {d} {d}\n", .{ex, un});
 
     try stdout_writer.flush(); // Don't forget to flush!
+                               //
+
+    // const d = stats.UnionDist(f32){ .exponential = Exp.init(4) };
+    
+    var d = stats.UnionDist(f32){ .constant = Const.init(1) };
+
+    
+    try stdout_writer.print("Union: {any}\n", .{d});
+    
+    for (0..100) |_| {
+        try stdout_writer.print("{d} ", .{d.sample(rng)});
+    }
+    try stdout_writer.flush();
 }
 
 

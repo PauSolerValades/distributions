@@ -9,9 +9,11 @@ pub fn Exponential(comptime Precision: type) type {
     
     return struct {
         pub const Self = @This();
+        pub const PDist = Distribution(Precision); 
         lambda: Precision,
-        interface: Distribution(Precision),
+        //interface: Distribution(Precision),
 
+        interface: PDist = .{ .vtable = &.{ .sample = sampleImpl } },
         /// Uses the inverse method RNG
         pub fn sample(self: *Self, rng: Random) Precision {
             const u = rng.float(Precision);
@@ -26,9 +28,7 @@ pub fn Exponential(comptime Precision: type) type {
         pub fn init(lambda: Precision) @This() {
             return .{
                 .lambda = lambda,
-                .interface = Distribution(Precision){
-                    .vtable = &.{ .sample = sampleImpl }
-                }
+                .interface = PDist{ .vtable = &.{ .sample = sampleImpl } }
             };
         }
 
