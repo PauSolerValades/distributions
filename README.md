@@ -1,6 +1,6 @@
 # Distribution
 
-Zig library to sample from statistical distributions. Born out of my need building a Discrete Event Simulation.
+Zig library to sample from statistical distributions. Born out of my need of quick configs while building a Discrete Event Simulation.
 
 Distributions implemented:
 - Continuous: Exponential, Uniform. (also Hyperexponential, Hypoexponential and Erlang, but not tested)
@@ -8,8 +8,8 @@ Distributions implemented:
 
 ## Features
 * **Generic Precision**: Suport for Single (f32) and Double (f64) precision at comptime for Continuous Distributions and probabiltiy computations in Discrete Distributions.
-* **Arbitrary Data Types**: Discrete distributions (like Categorical and ECDF) can sample and return any arbitrary comptime-defined Zig type (integers, enums, or custom structs).
-* **Dual Polymorphism**: two ways of polymorphism, chose from:
+* **Arbitrary Data Types**: Discrete distributions (like Categorical and ECDF) can sample and return any Zig type such as ints, floats, enums and bools.
+* **Dual Polymorphism**: two approaches of polymorphism, choose from:
     * **Tagged Unions:** Zero-overhead, compiler-inlined dispatch for closed sets of distributions.
     * **Intrusive Interfaces:** Fully dynamic, user-extensible dispatch for runtime flexibility.
 * **Immutable Zero-Allocations post-init:** Distributions just require allocations (_if they require it_ as use of arrays) on init, then the object is immutable and just to be sampled with.
@@ -54,6 +54,17 @@ A slice of random number can be filled if using the interface like this:
 var esample: [40]f32 = undefined;
 dexp.sampleBuffer(&esample, rng);
 ```
+
+## Examples
+
+In the `examples` folders there are 5 examples showcasing features:
+- `continous_distribution.zig`: Creates and samples from the Continous Distributions. Shows how to sample from an array implementing the interface `Distribution` with different types. 
+- `discrete_distribution.zig`: Creates and samples from Discrete Distributions. Analogous to `continous_distribution.zig`
+- `union.zig`: Showcases how to initialize an array with the union `ContinousDistribution` and sample from it.
+- `union_disc.zig`: Analogous as the `union.zig`, but showcases the `DataType` as an `enum` and numeric types.
+- `union_json.zig`: Defines an struct with the union distributions and reads from a JSON to have an struct with different distributions, both continuous and discrete.
+
+
 ## Aims
 
 1. Support widely used Continous Distributions: Normal, logNormal, Cauchy, Gamma, Weibull...
