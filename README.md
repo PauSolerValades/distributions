@@ -1,20 +1,18 @@
 # Distribution
 
-Zig library that aims to implement various distribution related functions commonly used in statistics. Right now it just implements `Uniform` and `Exponential` number generation with single or double precision.
+Zig library to sample from statistical distributions. Born out of my need building a Discrete Event Simulation.
 
-## Aims
+Distributions implemented:
+- Continuous: Exponential, Uniform. (also Hyperexponential, Hypoexponential and Erlang, but not tested)
+- Discrete: Categorical, Empirical Cumulative Distribution.
 
-1. Support widely used Continous Distributions: Normal, logNormal, Cauchy, Gamma, Weibull...
-2. Support widely used Discrete Distributions: Geometrical, Binomial, Bernoulli, Poisson...
-3. Add support for the usually common functions. In R terminology those would be:
-  - rfunc: random number generation
-  - qfunc: quartile $z_{\alpha/2}$
-  - dfunc: theoretical density function $f(x)$
-  - pfunc: cumulative density funciton $F(x)$
-
-## Design
-
-I think this problem is absolutely suited for an _Intrusive Interface_ polymorphism. All implementation of the interface `Distribution` must implement the same functions `pdf(), cdf(), sample(), ppf()`, but there might be functions that the implementes share the exact same code, such as `sampleBuffer`, which just calls `sample()` on loop, regarding of what sample is.
+## Features
+* **Generic Precision**: Suport for Single (f32) and Double (f64) precision at comptime for Continuous Distributions and probabiltiy computations in Discrete Distributions.
+* **Arbitrary Data Types**: Discrete distributions (like Categorical and ECDF) can sample and return any arbitrary comptime-defined Zig type (integers, enums, or custom structs).
+* **Dual Polymorphism**: two ways of polymorphism, chose from:
+    * **Tagged Unions:** Zero-overhead, compiler-inlined dispatch for closed sets of distributions.
+    * **Intrusive Interfaces:** Fully dynamic, user-extensible dispatch for runtime flexibility.
+* **Immutable Zero-Allocations post-init:** Distributions just require allocations (_if they require it_ as use of arrays) on init, then the object is immutable and just to be sampled with.
 
 ## Tutorial 
 _[See `src/main.zig` for the code]_
@@ -46,7 +44,7 @@ const e: f32 = dexp.sample(rng);
 
 You can generate numbers without using the `sample` from the interface like this if you want to save a line. This is useful if you just want a quick random number.
 
-```
+```zig
 const ex: f32 = exp.sample(rng);
 ```
 
@@ -56,3 +54,20 @@ A slice of random number can be filled if using the interface like this:
 var esample: [40]f32 = undefined;
 dexp.sampleBuffer(&esample, rng);
 ```
+## Aims
+
+1. Support widely used Continous Distributions: Normal, logNormal, Cauchy, Gamma, Weibull...
+2. Support widely used Discrete Distributions: Geometrical, Binomial, Bernoulli, Poisson...
+3. Add support for the usually common functions, despite it's main focus should be just sampling. In R terminology those would be:
+  - rfunc: random number generation
+  - qfunc: quartile $z_{\alpha/2}$
+  - dfunc: theoretical density function $f(x)$
+  - pfunc: cumulative density funciton $F(x)$
+
+## Design
+
+I think this problem is absolutely suited for an _Intrusive Interface_ polymorphism. All implementation of the interface `Distribution` must implement the same functions `pdf(), cdf(), sample(), ppf()`, but there might be functions that the implementes share the exact same code, such as `sampleBuffer`, which just calls `sample()` on loop, regarding of what sample is.
+
+Regarding the Union, it's also a useful to make the polymorphism at run time, eg, reading from a JSON config to know what to sample to.
+
+
