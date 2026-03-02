@@ -41,12 +41,11 @@ pub fn main(init: std.process.Init) !void {
     const dcat: *const Distribution(Action) = &cat.interface; // intrusive interface pattern
 
     // let's decide which actions does the png in the next 4 turns
-    for (0..5) |i| {
-        try stdout_writer.print("Png does {d} at turn {d}.\n", .{dcat.sample(rng), i});
+    for (1..5) |i| {
+        try stdout_writer.print("Png does {any} at turn {d}.\n", .{dcat.sample(rng), i});
     }
   
     // the other data dependant distribution is the ECDF from a given set of data.
-    // this 
     var obs = [_]i32{-4, -5, 2, 0, 8, 3, -4, 2, 3, 3};
 
     const ecdf: ECDF = try .init(init.gpa, &obs);

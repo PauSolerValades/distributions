@@ -36,8 +36,27 @@ pub fn ECDF(comptime Precision: type, comptime DataType: type) type {
 
         pub fn init(gpa: Allocator, data: []DataType) !Self {
             assert(data.len != 0); 
-            // Sort the list
-            std.mem.sort(DataType, data, {}, comptime std.sort.asc(DataType));
+
+            switch(@typeInfo(DataType)) {
+                .@"enum" => {
+                    const Sorter = struct {
+                        fn lessThan(_: void, a: DataType, b: DataType) bool {
+                            return @intFromEnum(a) < @intFromEnum(b);
+                        }
+                    };
+                    std.mem.sort(DataType, data, {}, comptime Sorter.lessThan);
+                },
+                .bool => {
+                    const Sorter = struct {
+                        fn lessThan(_: void, a: DataType, b: DataType) bool {
+                            return @intFromBool(a) < @intFromBool(b);
+                        }
+                    };
+                    std.mem.sort(DataType, data, {}, comptime Sorter.lessThan);
+                },
+                .int, .float => std.mem.sort(DataType, data, {}, comptime std.sort.asc(DataType)),
+                else => @compileError("Type not supported for ECDF"), 
+            }
             
             // find the duplicates
             var values: ArrayList(DataType) = .empty;

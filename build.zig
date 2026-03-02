@@ -92,6 +92,7 @@ pub fn build(b: *std.Build) void {
         "continous_distribution",
         "discrete_distribution",
         "union",
+        "union_discrete",
     };
 
     // compile the examples
