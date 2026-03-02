@@ -1,4 +1,5 @@
 const std = @import("std");
+const Allocator = std.mem.Allocator;
 const Random = std.Random;
 const Io = std.Io;
 
@@ -41,7 +42,7 @@ pub fn Exponential(comptime Precision: type) type {
         ) !Self {
             const Params = struct { lambda: Precision };
 
-            const parsed = try std.json.innerParse(Params, allocator, source, options);
+            const parsed = try std.json.innerParse(Params, gpa, source, options);
 
             return init(parsed.lambda);
         }
