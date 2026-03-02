@@ -56,7 +56,7 @@ pub fn DiscreteDistribution(comptime Precision: type, comptime DataType: type) t
         categorical: Categorical(Precision, DataType),
         ecdf: ECDF(Precision, DataType),
 
-        pub fn sample(self: *const Self, rng: Random) Precision {
+        pub fn sample(self: *const Self, rng: Random) DataType {
             switch(self.*) {
                 inline else => |*dist| return dist.sample(rng),
             }
