@@ -3,16 +3,17 @@ const Random = std.Random;
 
 pub fn VTable(comptime Precision: type) type {
     return struct {
-        sample: *const fn (dist: *Distribution(Precision), rng: Random) Precision,
+        sample: *const fn (dist: *const Distribution(Precision), rng: Random) Precision,
     };
 }
 
 pub fn Distribution(comptime Precision: type) type {
-   //const Self = @This();
+    
     return struct {
+        const Self = @This();
         vtable: *const VTable(Precision),
 
-        pub inline fn sample(self: *Distribution(Precision), rng: Random) Precision {
+        pub inline fn sample(self: *const Self, rng: Random) Precision {
             return self.vtable.sample(self, rng);
         }
 
@@ -20,12 +21,11 @@ pub fn Distribution(comptime Precision: type) type {
         // that is, for example, fill a buffer with n samples. samples has to be the implemented
         // and the nSamples is here and just calls samples.
 
-        pub inline fn sampleBuffer(self: *Distribution(Precision), buffer: []Precision, rng: Random) void {
+        pub inline fn sampleBuffer(self: *const Self, buffer: []Precision, rng: Random) void {
             for (0..buffer.len) |i| {
                 buffer[i] = self.vtable.sample(self, rng);
             }
         }
     };
 }
-
 

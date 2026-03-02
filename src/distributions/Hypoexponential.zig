@@ -1,7 +1,7 @@
 const std = @import("std");
 const Random = std.Random;
 
-const Distribution = @import("Distribution.zig").Distribution;
+const Distribution = @import("../Distribution.zig").Distribution;
 
 pub fn HypoExponential(comptime Precision: type) type {
     return struct {

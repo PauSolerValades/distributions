@@ -1,8 +1,8 @@
 const std = @import("std");
 const Random = std.Random;
-const Exponential = @import("Exponential.zig").Exponential;
-const Uniform = @import("Uniform.zig").Uniform;
-const Constant = @import("Constant.zig").Constant;
+const Exponential = @import("distributions/Exponential.zig").Exponential;
+const Uniform = @import("distributions/Uniform.zig").Uniform;
+const Constant = @import("distributions/Constant.zig").Constant;
 
 pub fn UnionDist(comptime Precision: type) type {
     

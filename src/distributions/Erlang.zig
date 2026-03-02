@@ -2,7 +2,7 @@ const std = @import("std");
 const Random = std.Random;
 const assert = std.debug.assert;
 
-const Distribution = @import("Distribution.zig").Distribution;
+const Distribution = @import("../Distribution.zig").Distribution;
 
 pub fn Erlang(comptime Precision: type) type {
     return struct {
