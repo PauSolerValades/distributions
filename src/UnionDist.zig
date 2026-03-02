@@ -29,6 +29,18 @@ pub fn ContinuousDistribution(comptime Precision: type) type {
                 inline else => |*dist| return dist.sample(rng),
             }
         }
+
+        pub fn format(self: *const Self, writer: *Io.Writer) !void {
+            switch(self.*) {
+                // generates this:
+                // .constant => |*c| return c.sample(rng),
+                // .exponential => |*exp| return exp.sample(rng),
+                // .uniform => |*unif| return unif.sample(rng),
+                // ...
+                inline else => |*dist| try dist.format(writer),
+            }
+        }
+
     };
 }
 
@@ -48,5 +60,18 @@ pub fn DiscreteDistribution(comptime Precision: type, comptime DataType: type) t
                 inline else => |*dist| return dist.sample(rng),
             }
         }
+
+        pub fn format(self: *const Self, writer: *Io.Writer) !void {
+            switch(self.*) {
+                // generates this:
+                // .constant => |*c| return c.sample(rng),
+                // .exponential => |*exp| return exp.sample(rng),
+                // .uniform => |*unif| return unif.sample(rng),
+                // ...
+                inline else => |*dist| try dist.format(writer),
+            }
+        }
+
+
     };
 }
