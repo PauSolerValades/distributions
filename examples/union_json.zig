@@ -20,7 +20,7 @@ const Config = struct {
 const content = 
     \\{
     \\  "inter_arrival_time": { "exponential": { "lambda": 2.0 } },  
-    \\  "wait_time": { "constant": { "constant": 5.0 } },
+    \\  "wait_time": { "constant": { "value": 5.0 } },
     \\  "boarding_time": { "uniform": { "a": 1, "b": 10 } },
     \\  "user_action": { "categorical": { "weights": [0.4, 0.6], "data": [0, 1] } }
     \\}

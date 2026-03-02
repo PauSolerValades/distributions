@@ -35,7 +35,7 @@ pub fn Exponential(comptime Precision: type) type {
         /// To parse the JSON into the UnionDistr, it's needed to ignore the 
         /// .interface method when parsing the json to create the union!
         pub fn jsonParse(
-            allocator: std.mem.Allocator,
+            gpa: Allocator,
             source: anytype,
             options: std.json.ParseOptions,
         ) !Self {

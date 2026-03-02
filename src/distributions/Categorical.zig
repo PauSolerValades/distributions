@@ -33,7 +33,9 @@ pub fn Categorical(comptime Precision: type, comptime DataType: type) type {
                 acc[i] = sum;
             }
             
-            assert(sum == 1.0);
+            // being very pedantic about error propagation :)
+            const tol = @as(Precision, @floatFromInt(weights.len)) * std.math.floatEps(Precision);
+            assert(!std.math.approxEqAbs(Precision, sum, 1.0, tolerance)) {
 
             return .{
                 .weights = weights,
@@ -84,12 +86,12 @@ pub fn Categorical(comptime Precision: type, comptime DataType: type) type {
 
         // Example: Categorical( (1, 0.1, 0.1), (2, 0.1, 0.2), (3, 0.1, 0.3) )
         pub fn format(self: *const Self, writer: *Io.Writer) !void {
-            try writer.writeAll("Categorical{{");
+            try writer.writeAll("Categorical{{ ");
             for (0..self.weights.len - 1) |i| {
                 try writer.print("({d:.2}, {d:.2}, {d:.2}) ", .{self.data[i], self.weights[i], self.acc[i]});
             }
             const last_i = self.data.len - 1;
-            try writer.print("({d:.2}, {d:.2}, {d:.2}) }}\n", .{self.data[last_i], self.weights[last_i], self.acc[last_i]});
+            try writer.print("({d:.2}, {d:.2}, {d:.2}) }}", .{self.data[last_i], self.weights[last_i], self.acc[last_i]});
         }
     };
 }
