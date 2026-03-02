@@ -8,7 +8,7 @@ const Uniform = @import("distributions/Uniform.zig").Uniform;
 const Categorical = @import("distributions/Categorical.zig").Categorical;
 const ECDF = @import("distributions/ECDF.zig").ECDF;
 
-pub fn ContinousDistribution(comptime Precision: type) type {
+pub fn ContinuousDistribution(comptime Precision: type) type {
     
     if (@typeInfo(Precision) != .float) @compileError("Precision must be a floating point number\n");
 

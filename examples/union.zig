@@ -4,7 +4,7 @@ const Io = std.Io;
 const dist = @import("distributions");
 
 const P = f64;
-const Cont = dist.ContinousDistribution(P);
+const Cont = dist.ContinuousDistribution(P);
 
 const Unif = dist.Uniform(P);
 const Exp = dist.Exponential(P);

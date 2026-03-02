@@ -12,5 +12,5 @@ pub const ECDF = @import("distributions/ECDF.zig").ECDF;
 
 const unions = @import("UnionDist.zig");
 
-pub const ContinousDistribution = unions.ContinousDistribution;
+pub const ContinuousDistribution = unions.ContinuousDistribution;
 pub const DiscreteDistribution = unions.DiscreteDistribution;

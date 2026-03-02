@@ -4,15 +4,15 @@ const Io = std.Io;
 const distributions = @import("distributions");
 
 // as we want to use both discrete and continous distributions, we must import both unions
-const Continous = distributions.ContinousDistribution;
+const Continuous = distributions.ContinuousDistribution;
 const Discrete = distributions.DiscreteDistribution;
 
 // this struct defines which type of distribution can the field hold
 // any of those can be inited with it's precision
 const Config = struct {
-    inter_arrival_time: Continous(f32),
-    wait_time: Continous(f64),
-    boarding_time: Continous(f64),
+    inter_arrival_time: Continuous(f32),
+    wait_time: Continuous(f64),
+    boarding_time: Continuous(f64),
     user_action: Discrete(f32, u8),
 };
 
