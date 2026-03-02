@@ -7,7 +7,7 @@ Distributions implemented:
 - Discrete: Categorical, Empirical Cumulative Distribution.
 
 ## Features
-* **Generic Precision**: Suport for Single (f32) and Double (f64) precision at comptime for Continuous Distributions and probabiltiy computations in Discrete Distributions.
+* **Generic Precision**: Support for Single (f32) and Double (f64) precision at comptime for Continuous Distributions and probability computations in Discrete Distributions.
 * **Arbitrary Data Types**: Discrete distributions (like Categorical and ECDF) can sample and return any Zig type such as ints, floats, enums and bools.
 * **Dual Polymorphism**: two approaches of polymorphism, choose from:
     * **Tagged Unions:** Zero-overhead, compiler-inlined dispatch for closed sets of distributions.
