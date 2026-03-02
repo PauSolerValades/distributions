@@ -1,6 +1,7 @@
 const std = @import("std");
 const assert = std.debug.assert;
 const Random = std.Random;
+const Io = std.Io;
 
 const Distribution = @import("../Distribution.zig").Distribution;
 
@@ -33,7 +34,7 @@ pub fn Uniform(comptime Precision: type) type {
             return .{
                 .a = a,
                 .b = b,
-                .interface = .{ .vtable = &.{ .sample = sampleImpl } }
+                .interface = .{ .vtable = &.{ .sample = sampleImpl, .format = formatImpl } }
             };
         }
         
@@ -48,7 +49,15 @@ pub fn Uniform(comptime Precision: type) type {
 
             return init(parsed.a, parsed.b);
         }
+        
+        fn formatImpl(dist: *const PDist, writer: *Io.Writer) !void {
+            const self: *const Self = @alignCast(@fieldParentPtr("interface", dist));
+            try self.format(writer);
+        }
 
+        pub fn format(self: *const Self, writer: *Io.Writer) !void {
+            try writer.print("Unif{{{d:.2}, {d:.2}}}", .{self.a, self.b});
+        }
     };
 }
 

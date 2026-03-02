@@ -46,11 +46,11 @@ pub fn main(init: std.process.Init) !void {
     defer cat_int.deinit(init.gpa);
 
     
-    try stdout_writer.print("ECDF (Enum) sampled: {any}\n", .{ecdf_enum.sample(rng)});
-    try stdout_writer.print("ECDF (f64)  sampled: {d:.2}\n\n", .{ecdf_float.sample(rng)});
+    try stdout_writer.print("ECDF ({f}) sampled: {any}\n", .{ecdf_enum, ecdf_enum.sample(rng)});
+    try stdout_writer.print("ECDF ({f})  sampled: {d:.2}\n\n", .{ecdf_enum, ecdf_float.sample(rng)});
 
-    try stdout_writer.print("Cat (Enum)  sampled: {any}\n", .{cat_enum.sample(rng)});
-    try stdout_writer.print("Cat (u32)   sampled: {d}\n", .{cat_int.sample(rng)});
+    try stdout_writer.print("Cat ({f})  sampled: {any}\n", .{cat_enum, cat_enum.sample(rng)});
+    try stdout_writer.print("Cat ({f})   sampled: {d}\n", .{cat_int, cat_int.sample(rng)});
 
     try stdout_writer.flush();
 }

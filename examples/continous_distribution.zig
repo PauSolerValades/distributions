@@ -53,7 +53,7 @@ pub fn main(init: std.process.Init) !void {
     };
 
     for (enemies, 0..) |enemy, i| {
-        try stdout_writer.print("Enemy {d} attacks with {d} damage (from a {any})\n", .{i, enemy.sample(rng), @TypeOf(enemy)});
+        try stdout_writer.print("Enemy {d} attacks with {d} damage (from a {f})\n", .{i, enemy.sample(rng), enemy});
     }
 
     // if the interface is not your thing, you can directly sample from the distribution without

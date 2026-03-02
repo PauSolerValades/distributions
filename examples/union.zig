@@ -35,7 +35,7 @@ pub fn main(init: std.process.Init) !void {
     };
 
     for (dconst) |d| {
-        try stdout_writer.print("Type {any} sampeled {d}\n", .{@TypeOf(d), d.sample(rng)});
+        try stdout_writer.print("Type {any} sampeled {d}\n", .{d, d.sample(rng)});
     }
     try stdout_writer.flush();
 }

@@ -1,5 +1,6 @@
 const std = @import("std");
 const Random = std.Random;
+const Io = std.Io;
 
 const Distribution = @import("../Distribution.zig").Distribution;
 
@@ -27,7 +28,7 @@ pub fn Exponential(comptime Precision: type) type {
         pub fn init(lambda: Precision) @This() {
             return .{
                 .lambda = lambda,
-                .interface = PDist{ .vtable = &.{ .sample = sampleImpl } }
+                .interface = PDist{ .vtable = &.{ .sample = sampleImpl, .format = formatImpl } }
             };
         }
 
@@ -43,6 +44,15 @@ pub fn Exponential(comptime Precision: type) type {
             const parsed = try std.json.innerParse(Params, allocator, source, options);
 
             return init(parsed.lambda);
+        }
+
+        fn formatImpl(dist: *const PDist, writer: *Io.Writer) !void {
+            const self: *const Self = @alignCast(@fieldParentPtr("interface", dist));
+            try self.format(writer);
+        }
+
+        pub fn format(self: *const Self, writer: *Io.Writer) !void {
+            try writer.print("Exp{{λ={d:.2}}}", .{self.lambda});
         }
 
     };

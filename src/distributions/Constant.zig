@@ -1,6 +1,7 @@
 const std = @import("std");
 const assert = std.debug.assert;
 const Random = std.Random;
+const Io = std.Io;
 
 const Distribution = @import("../Distribution.zig").Distribution;
 
@@ -13,13 +14,20 @@ pub fn Constant(comptime Precision: type) type {
         const Self = @This(); // = Uniform(Precision)
         const PDist: type = Distribution(Precision);
 
-        constant: Precision,
+        value: Precision,
         interface: PDist,
-       
+        
+        pub fn init(c: Precision) Self {
+            return .{
+                .value = c,
+                .interface = .{ .vtable = &.{ .sample = sampleImpl, .format = formatImpl } }
+            };
+        }
+
         // uses the rng instance to get a float between 0 and 1 and then scales it
         pub inline fn sample(self: *const Self, rng: Random) Precision {
             _ = rng;
-            return self.constant;
+            return self.value;
         }
 
         /// Function to put into the VTable of Distribution
@@ -28,25 +36,28 @@ pub fn Constant(comptime Precision: type) type {
             return self.sample(rng);
         }
 
-        pub fn init(c: Precision) Self {
-            return .{
-                .constant = c,
-                .interface = .{ .vtable = &.{ .sample = sampleImpl } }
-            };
-        }
-        
+                
         pub fn jsonParse(
-            allocator: std.mem.Allocator,
+            gpa: std.mem.Allocator,
             source: anytype,
             options: std.json.ParseOptions,
         ) !Self {
-            const Params = struct { constant: Precision };
+            const Params = struct { value: Precision };
 
-            const parsed = try std.json.innerParse(Params, allocator, source, options);
+            const parsed = try std.json.innerParse(Params, gpa, source, options);
 
-            return init(parsed.constant);
+            return init(parsed.value);
+        }
+        
+        fn formatImpl(dist: *const PDist, writer: *Io.Writer) !void {
+            const self: *const Self = @alignCast(@fieldParentPtr("interface", dist));
+            try self.format(writer);
         }
 
+
+        pub fn format(self: *const Self, writer: *Io.Writer) !void {
+            try writer.print("Const{{c={d:.2}}}", .{self.value});
+        }
     };
 }
 

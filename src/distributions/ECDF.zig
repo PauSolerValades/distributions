@@ -1,6 +1,7 @@
 const std = @import("std");
 const assert = std.debug.assert;
 const Random = std.Random;
+const Io = std.Io;
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
 
@@ -14,26 +15,10 @@ pub fn ECDF(comptime Precision: type, comptime DataType: type) type {
         const PDist: type = Distribution(DataType);
         
         values: []DataType,
+        prob: []Precision,
         cump: []Precision,
         interface: PDist,
         
-    
-        pub inline fn sample(self: *const Self, rng: Random) DataType {
-            const u = rng.float(Precision);
-            var i: usize = 0;
-            for (self.cump) |a| {
-                if (u <= a) break;
-                i+=1;
-            }
-            return self.values[i];
-        }
-
-        /// Function to put into the VTable of Distribution
-        fn sampleImpl(dist: *const PDist, rng: Random) DataType {
-            const self: *const Self = @alignCast(@fieldParentPtr("interface", dist));
-            return self.sample(rng);
-        }
-
         pub fn init(gpa: Allocator, data: []DataType) !Self {
             assert(data.len != 0); 
 
@@ -81,6 +66,7 @@ pub fn ECDF(comptime Precision: type, comptime DataType: type) type {
             try values.append(gpa, data[data.len-1]);
 
             const v = try values.toOwnedSlice(gpa);
+            const cum = try gpa.alloc(Precision, v.len);
             const p = try gpa.alloc(Precision, v.len);
 
             const totalf: Precision = @floatFromInt(data.len);
@@ -89,21 +75,42 @@ pub fn ECDF(comptime Precision: type, comptime DataType: type) type {
             for (count.items, 0..) |n, i| {
                 cumulative_sum += n;
                 const nf: Precision = @floatFromInt(cumulative_sum);
-                p[i] = nf / totalf;
+                cum[i] = nf / totalf;
+                p[i] = @as(Precision, @floatFromInt(n)) / totalf;
             }
 
             return .{
                 .values = v,
-                .cump = p,
-                .interface = .{ .vtable = &.{ .sample = sampleImpl } }
+                .cump = cum,
+                .prob = p,
+                .interface = .{ .vtable = &.{ .sample = sampleImpl, .format = formatImpl } }
             };
         }
 
         pub fn deinit(self: *const Self, gpa: Allocator) void {
             gpa.free(self.cump);
             gpa.free(self.values);
+            gpa.free(self.prob);
         }
-        
+
+    
+        pub inline fn sample(self: *const Self, rng: Random) DataType {
+            const u = rng.float(Precision);
+            var i: usize = 0;
+            for (self.cump) |a| {
+                if (u <= a) break;
+                i+=1;
+            }
+            return self.values[i];
+        }
+
+        /// Function to put into the VTable of Distribution
+        fn sampleImpl(dist: *const PDist, rng: Random) DataType {
+            const self: *const Self = @alignCast(@fieldParentPtr("interface", dist));
+            return self.sample(rng);
+        }
+
+                
         pub fn jsonParse(
             gpa: Allocator,
             source: anytype,
@@ -115,6 +122,23 @@ pub fn ECDF(comptime Precision: type, comptime DataType: type) type {
 
             return init(gpa, parsed.data);
         }
+
+        fn formatImpl(dist: *const PDist, writer: *Io.Writer) !void {
+            const self: *const Self = @alignCast(@fieldParentPtr("interface", dist));
+            try self.format(writer);
+        }
+
+
+        // Example: Categorical( (1, 0.1, 0.1), (2, 0.1, 0.2), (3, 0.1, 0.3) )
+        pub fn format(self: *const Self, writer: *Io.Writer) !void {
+            try writer.writeAll("ECDF{{ ");
+            for (0..self.values.len - 1) |i| {
+                try writer.print("({d:.2}, {d:.2}, {d:.2}) ", .{self.values[i], self.prob[i], self.cump[i]});
+            }
+            const last_i = self.values.len - 1;
+            try writer.print("({d:.2}, {d:.2}, {d:.2}) }}\n", .{self.values[last_i], self.prob[last_i], self.cump[last_i]});
+        }
+
     };
 }
 
