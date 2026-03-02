@@ -65,15 +65,15 @@ pub fn Categorical(comptime Precision: type, comptime DataType: type) type {
         }
         
         pub fn jsonParse(
-            allocator: std.mem.Allocator,
+            gpa: Allocator,
             source: anytype,
             options: std.json.ParseOptions,
         ) !Self {
-            const Params = struct { weights: Precision, data: DataType };
+            const Params = struct { weights: []Precision, data: []DataType };
 
-            const parsed = try std.json.innerParse(Params, allocator, source, options);
-
-            return init(parsed.a, parsed.b);
+            const parsed = try std.json.innerParse(Params, gpa, source, options);
+            
+            return init(gpa, parsed.weights, parsed.data);
         }
     };
 }

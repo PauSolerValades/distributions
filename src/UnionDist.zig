@@ -19,7 +19,7 @@ pub fn ContinousDistribution(comptime Precision: type) type {
         exponential: Exponential(Precision),
         uniform: Uniform(Precision),
         
-        pub fn sample(self: *Self, rng: Random) Precision {
+        pub fn sample(self: *const Self, rng: Random) Precision {
             switch(self.*) {
                 // generates this:
                 // .constant => |*c| return c.sample(rng),
@@ -32,7 +32,7 @@ pub fn ContinousDistribution(comptime Precision: type) type {
     };
 }
 
-pub fn DiscreteDistribution(comptime Precision, type, comptime DataType: type) type {
+pub fn DiscreteDistribution(comptime Precision: type, comptime DataType: type) type {
 
     if (@typeInfo(Precision) != .float) @compileError("Precision must be a floating point number\n");
     
@@ -43,10 +43,10 @@ pub fn DiscreteDistribution(comptime Precision, type, comptime DataType: type) t
         categorical: Categorical(Precision, DataType),
         ecdf: ECDF(Precision, DataType),
 
-        pub fn sample(self: *Self, rng: Random) {
+        pub fn sample(self: *const Self, rng: Random) Precision {
             switch(self.*) {
-                inline else => |*dist| return dist.sample(rng);
+                inline else => |*dist| return dist.sample(rng),
             }
         }
-    }
+    };
 }

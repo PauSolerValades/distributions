@@ -28,7 +28,7 @@ pub fn build(b: *std.Build) void {
     // to our consumers. We must give it a name because a Zig package can expose
     // multiple modules and consumers will need to be able to specify which
     // module they want to access.
-    const mod = b.addModule("stats", .{
+    const mod = b.addModule("distributions", .{
         // The root source file is the "entry point" of this module. Users of
         // this module will only be able to access public declarations contained
         // in this file, which means that if you have declarations that you
@@ -58,7 +58,7 @@ pub fn build(b: *std.Build) void {
     // If neither case applies to you, feel free to delete the declaration you
     // don't need and to put everything under a single module.
     const exe = b.addExecutable(.{
-        .name = "stats",
+        .name = "distributions",
         .root_module = b.createModule(.{
             // b.createModule defines a new module just like b.addModule but,
             // unlike b.addModule, it does not expose the module to consumers of
@@ -78,10 +78,48 @@ pub fn build(b: *std.Build) void {
                 // repeated because you are allowed to rename your imports, which
                 // can be extremely useful in case of collisions (which can happen
                 // importing modules from different packages).
-                .{ .name = "stats", .module = mod },
+                .{ .name = "distributions", .module = mod },
             },
         }),
     });
+
+    const examples_step = b.step("examples", "Compile the examples in \"examples\" folder");
+    
+    
+    // TODO: just make this return a list of filenames
+    const examples = [_][]const u8{
+        "union_json",
+        "continous_distribution",
+        "discrete_distribution",
+        "union",
+    };
+
+    // compile the examples
+    for (examples) |example| {
+        const source_path = b.fmt("examples/{s}.zig", .{example});
+        
+        const example_exe = b.addExecutable(.{
+            .name = example,
+            .root_module = b.createModule(.{
+                .root_source_file = b.path(source_path),
+                .target = target,
+                .optimize = optimize,
+                .imports = &.{
+                    .{ .name = "distributions", .module = mod },
+                },
+            }),
+        });
+        
+        //b.installArtifact(example_exe);
+        //const example_cmd = b.addRunArtifact(example_exe);
+        const example_cmd = b.addInstallArtifact(example_exe, .{
+            .dest_dir = .{ .override = .{ .custom = "examples" } },
+        });
+        examples_step.dependOn(&example_cmd.step);
+    }
+    
+    b.installArtifact(exe);
+
 
     // This declares intent for the executable to be installed into the
     // install prefix when running `zig build` (i.e. when executing the default

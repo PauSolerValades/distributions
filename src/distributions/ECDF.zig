@@ -86,15 +86,15 @@ pub fn ECDF(comptime Precision: type, comptime DataType: type) type {
         }
         
         pub fn jsonParse(
-            allocator: std.mem.Allocator,
+            gpa: Allocator,
             source: anytype,
             options: std.json.ParseOptions,
         ) !Self {
-            const Params = struct { data: DataType };
+            const Params = struct { data: []DataType };
 
-            const parsed = try std.json.innerParse(Params, allocator, source, options);
+            const parsed = try std.json.innerParse(Params, gpa, source, options);
 
-            return init(parsed.a, parsed.b);
+            return init(gpa, parsed.data);
         }
     };
 }
