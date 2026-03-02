@@ -1,5 +1,6 @@
 const std = @import("std");
 const Random = std.Random;
+const Io = std.Io;
 
 const Constant = @import("distributions/Constant.zig").Constant;
 const Exponential = @import("distributions/Exponential.zig").Exponential;
