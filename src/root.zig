@@ -10,4 +10,7 @@ pub const Exponential = @import("distributions/Exponential.zig").Exponential;
 pub const Categorical = @import("distributions/Categorical.zig").Categorical;
 pub const ECDF = @import("distributions/ECDF.zig").ECDF;
 
-pub const UnionDist = @import("UnionDist.zig").UnionDist;
+const unions = @import("UnionDist.zig");
+
+const ContinousDistribution = unions.ContinousDistribution;
+const DiscreteDistribution = unions.DiscreteDistribution;

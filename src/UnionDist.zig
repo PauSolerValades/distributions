@@ -1,18 +1,24 @@
 const std = @import("std");
 const Random = std.Random;
+
+const Constant = @import("distributions/Constant.zig").Constant;
 const Exponential = @import("distributions/Exponential.zig").Exponential;
 const Uniform = @import("distributions/Uniform.zig").Uniform;
-const Constant = @import("distributions/Constant.zig").Constant;
 
-pub fn UnionDist(comptime Precision: type) type {
+const Categorical = @import("distributions/Categorical.zig").Categorical;
+const ECDF = @import("distributions/ECDF.zig").ECDF;
+
+pub fn ContinousDistribution(comptime Precision: type) type {
     
+    if (@typeInfo(Precision) != .float) @compileError("Precision must be a floating point number\n");
+
     return union(enum) {
         const Self = @This();
 
         constant: Constant(Precision),
         exponential: Exponential(Precision),
         uniform: Uniform(Precision),
-
+        
         pub fn sample(self: *Self, rng: Random) Precision {
             switch(self.*) {
                 // generates this:
@@ -26,3 +32,21 @@ pub fn UnionDist(comptime Precision: type) type {
     };
 }
 
+pub fn DiscreteDistribution(comptime Precision, type, comptime DataType: type) type {
+
+    if (@typeInfo(Precision) != .float) @compileError("Precision must be a floating point number\n");
+    
+    return union(enum) {
+        const Self = @This();
+
+        constant: Constant(DataType),
+        categorical: Categorical(Precision, DataType),
+        ecdf: ECDF(Precision, DataType),
+
+        pub fn sample(self: *Self, rng: Random) {
+            switch(self.*) {
+                inline else => |*dist| return dist.sample(rng);
+            }
+        }
+    }
+}
