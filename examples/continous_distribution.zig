@@ -36,7 +36,7 @@ pub fn main(init: std.process.Init) !void {
     try stdout_writer.print("Exponential Buffer {any}\n", .{dexp.sampleBuffer(&esample, rng)});
   
     // create a uniform distribution
-    const unif: Unif = .init(10, 20); 
+    const unif: Unif = .init(10, 20, .cc); 
     const dunf: *const Dist = &unif.interface;
     try stdout_writer.print("Uniform sample: {d}\n", .{dunf.sample(rng)});
    
@@ -46,8 +46,8 @@ pub fn main(init: std.process.Init) !void {
     // the use of the intrusive interface pattern can allow us mix different distributions into
     // one single array without any overhead
     const enemies: [4]*const Dist = .{
-        &Unif.init(5,10).interface, 
-        &Unif.init(20, 30).interface, 
+        &Unif.init(5,10, .oc).interface, 
+        &Unif.init(20, 30, .oc).interface, 
         &Exp.init(4).interface, 
         &Exp.init(10).interface
     };

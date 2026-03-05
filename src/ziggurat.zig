@@ -1,5 +1,4 @@
-/// IMplementation of the ziggurat algorithm translating it from rand_dist from Rust
-///
+/// Iplementation of the ziggurat algorithm translating it from rand_dist from Rust
 const std = @import("std");
 const assert = std.debug.assert;
 const Random = std.Random;

@@ -6,6 +6,7 @@ const stats = @import("distributions");
 const P: type = f32;
 
 const Exp = stats.Exponential(f32);
+const Norm = stats.Normal(f32);
 const Dist = stats.Distribution(f32);
 
 pub fn main(init: std.process.Init) !void {
@@ -35,7 +36,17 @@ pub fn main(init: std.process.Init) !void {
     try stdout_writer.print("Exponential sample: {d}\n", .{e});
     try stdout_writer.print("Exponential Buffer {any}\n", .{esample});
    
-  
+    const norm: Norm = .init(0,1); 
+    const dnorm: *const Dist = &norm.interface; //ptr distribution
+    const u = dnorm.sample(rng);
+   
+    var nsample: [40]f32 = undefined;
+    dnorm.sampleBuffer(&nsample, rng);
+
+    try stdout_writer.print("Normal sample: {d}\n", .{u});
+    try stdout_writer.print("Normal Buffer {any}\n", .{nsample});
+   
+
     try stdout_writer.flush();
 }
 

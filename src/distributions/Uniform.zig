@@ -5,6 +5,13 @@ const Io = std.Io;
 
 const Distribution = @import("../Distribution.zig").Distribution;
 
+pub const Interval = enum {
+    oo, // (a,b)
+    oc, // (a,b]
+    co, // [a,b)
+    cc, // [a,b]
+};
+
 /// Implementation of the Uniform Distribution:
 /// $ f(x) = frac(1, b-a) $
 /// $ F(x) = 
@@ -16,11 +23,33 @@ pub fn Uniform(comptime Precision: type) type {
 
         a: Precision,
         b: Precision,
+        interval: Interval,
         interface: PDist,
     
         // uses the rng instance to get a float between 0 and 1 and then scales it
         pub inline fn sample(self: *const Self, rng: Random) Precision {
-            return self.a + (self.b - self.a) * rng.float(Precision);
+            const scale = self.a + (self.b - self.a);
+            switch (self.interval) {
+                // standard case
+                .co => return scale * rng.float(Precision),
+                .oc => return scale * (1 - rng.float(Precision)),
+                .oo => {
+                    var u = rng.float(Precision);
+                    // this will happen not very often (1/9mill in f64?), a while does not seem that bad?
+                    while (u == 0.0) {
+                        u = rng.float(Precision);
+                    }
+                    return scale * u;
+                },
+                .cc => {
+                    const inf = std.math.inf(Precision);
+                    const b_adj = std.math.nextAfter(Precision, self.b, inf);
+                    
+                    const result = self.a + (b_adj - self.a) * rng.float(Precision);
+                    
+                    return @min(self.b, result);
+                },
+            }
         }
 
         /// Function to put into the VTable of Distribution
@@ -29,11 +58,12 @@ pub fn Uniform(comptime Precision: type) type {
             return self.sample(rng);
         }
 
-        pub fn init(a: Precision, b: Precision) Self {
+        pub fn init(a: Precision, b: Precision, interval: Interval) Self {
             assert(b > a);
             return .{
                 .a = a,
                 .b = b,
+                .interval = interval,
                 .interface = .{ .vtable = &.{ .sample = sampleImpl, .format = formatImpl } }
             };
         }
@@ -43,11 +73,11 @@ pub fn Uniform(comptime Precision: type) type {
             source: anytype,
             options: std.json.ParseOptions,
         ) !Self {
-            const Params = struct { a: Precision, b: Precision };
+            const Params = struct { a: Precision, b: Precision, interval: Interval };
 
             const parsed = try std.json.innerParse(Params, allocator, source, options);
 
-            return init(parsed.a, parsed.b);
+            return init(parsed.a, parsed.b, parsed.interval);
         }
         
         fn formatImpl(dist: *const PDist, writer: *Io.Writer) !void {

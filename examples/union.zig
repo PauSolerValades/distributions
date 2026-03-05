@@ -31,7 +31,7 @@ pub fn main(init: std.process.Init) !void {
     const dconst: [3]Cont = .{
         .{ .constant = Const.init(1) },
         .{ .exponential = Exp.init(2) },
-        .{ .uniform = Unif.init(3, 4) },
+        .{ .uniform = Unif.init(3, 4, .cc) },
     };
 
     for (dconst) |d| {
