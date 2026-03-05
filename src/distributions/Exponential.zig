@@ -4,9 +4,23 @@ const Random = std.Random;
 const Io = std.Io;
 
 const Distribution = @import("../Distribution.zig").Distribution;
+const ziggurat = @import("../ziggurat.zig").ziggurat;
+const exp_table = @import("../tables.zig").exp_table;
+
+fn zigguratExponentialR(comptime Precision: type) Precision {
+    if (Precision == f64) { return 7.697117470131050077; }
+    else if (Precision == f32) { return 7.697117470; }
+    else unreachable;
+}
 
 /// Implements the scale ($EE (X) = lambda$) exponential distribution.
 /// $ f(x) = lambda*e^(-lambda x) $
+/// The Method generator is the Inverse Algorithm, which is very slow
+/// compared to the modern standard Ziggurat which is used by both
+/// numpy and rust_dist.
+/// Just give me time and I will implement it haha. this gives for free
+/// the implementation of the standard normal distribution, which could be
+/// cool to have
 pub fn Exponential(comptime Precision: type) type {
     
     return struct {
@@ -15,8 +29,13 @@ pub fn Exponential(comptime Precision: type) type {
         lambda: Precision,
         interface: PDist,
 
-        /// Uses the inverse method RNG
+        /// Uses Ziggurat
         pub fn sample(self: *const Self, rng: Random) Precision {
+            const u: Precision = ziggurat(rng, &exp_table, pdfStandard, zeroCase, false);
+            return u / self.lambda;
+        }
+        /// Uses the inverse method RNG
+        pub fn sampleInv(self: *const Self, rng: Random) Precision {
             const u = rng.float(Precision);
             return (1.0 / self.lambda) * (-@log(u));
         }
@@ -31,6 +50,15 @@ pub fn Exponential(comptime Precision: type) type {
                 .lambda = lambda,
                 .interface = PDist{ .vtable = &.{ .sample = sampleImpl, .format = formatImpl } }
             };
+        }
+
+        pub fn zeroCase(rng: Random, e: Precision) Precision {
+            _ = e;
+            return rng.float(Precision) - zigguratExponentialR(Precision);
+        }
+
+        pub fn pdfStandard(x: Precision) Precision {
+            return std.math.exp(-x);
         }
 
         /// To parse the JSON into the UnionDistr, it's needed to ignore the 
@@ -58,4 +86,7 @@ pub fn Exponential(comptime Precision: type) type {
 
     };
 }
+
+
+
 
