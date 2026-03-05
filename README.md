@@ -3,7 +3,7 @@
 Zig library to sample from statistical distributions. Born out of my need of quick configs while building a Discrete Event Simulation.
 
 Distributions implemented:
-- Continuous: Exponential, Uniform. (also Hyperexponential, Hypoexponential and Erlang, but not tested)
+- Continuous: Exponential, Uniform, Normal. (also Hyperexponential, Hypoexponential and Erlang, but not tested)
 - Discrete: Categorical, Empirical Cumulative Distribution.
 
 ## Features
