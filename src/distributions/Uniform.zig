@@ -21,14 +21,14 @@ pub fn Uniform(comptime Precision: type) type {
         const Self = @This(); // = Uniform(Precision)
         const PDist: type = Distribution(Precision);
 
-        a: Precision,
-        b: Precision,
+        min: Precision,
+        max: Precision,
         interval: Interval,
         interface: PDist,
     
         // uses the rng instance to get a float between 0 and 1 and then scales it
         pub inline fn sample(self: *const Self, rng: Random) Precision {
-            const scale = self.a + (self.b - self.a);
+            const scale = self.min + (self.max - self.min);
             switch (self.interval) {
                 // standard case
                 .co => return scale * rng.float(Precision),
@@ -43,11 +43,11 @@ pub fn Uniform(comptime Precision: type) type {
                 },
                 .cc => {
                     const inf = std.math.inf(Precision);
-                    const b_adj = std.math.nextAfter(Precision, self.b, inf);
+                    const b_adj = std.math.nextAfter(Precision, self.max, inf);
                     
-                    const result = self.a + (b_adj - self.a) * rng.float(Precision);
+                    const result = self.min + (b_adj - self.min) * rng.float(Precision);
                     
-                    return @min(self.b, result);
+                    return @min(self.max, result);
                 },
             }
         }
@@ -58,11 +58,11 @@ pub fn Uniform(comptime Precision: type) type {
             return self.sample(rng);
         }
 
-        pub fn init(a: Precision, b: Precision, interval: Interval) Self {
-            assert(b > a);
+        pub fn init(min: Precision, max: Precision, interval: Interval) Self {
+            assert(max > min);
             return .{
-                .a = a,
-                .b = b,
+                .min = min,
+                .max = max,
                 .interval = interval,
                 .interface = .{ .vtable = &.{ .sample = sampleImpl, .format = formatImpl } }
             };
@@ -73,11 +73,11 @@ pub fn Uniform(comptime Precision: type) type {
             source: anytype,
             options: std.json.ParseOptions,
         ) !Self {
-            const Params = struct { a: Precision, b: Precision, interval: Interval };
+            const Params = struct { min: Precision, max: Precision, interval: Interval };
 
             const parsed = try std.json.innerParse(Params, allocator, source, options);
 
-            return init(parsed.a, parsed.b, parsed.interval);
+            return init(parsed.min, parsed.max, parsed.interval);
         }
         
         fn formatImpl(dist: *const PDist, writer: *Io.Writer) !void {
@@ -86,7 +86,7 @@ pub fn Uniform(comptime Precision: type) type {
         }
 
         pub fn format(self: *const Self, writer: *Io.Writer) !void {
-            try writer.print("Unif{{{d:.2}, {d:.2}}}", .{self.a, self.b});
+            try writer.print("Unif{{{d:.2}, {d:.2}}}", .{self.min, self.max});
         }
     };
 }

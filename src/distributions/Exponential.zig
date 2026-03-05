@@ -8,31 +8,27 @@ const ziggurat = @import("../ziggurat.zig").ziggurat;
 const table = @import("../tables.zig");
 
 
-/// Implements the scale ($EE (X) = lambda$) exponential distribution.
+/// Implements the rate ($EE (X) = lambda$) exponential distribution.
 /// $ f(x) = lambda*e^(-lambda x) $
-/// The Method generator is the Inverse Algorithm, which is very slow
-/// compared to the modern standard Ziggurat which is used by both
-/// numpy and rust_dist.
-/// Just give me time and I will implement it haha. this gives for free
-/// the implementation of the standard normal distribution, which could be
-/// cool to have
+/// It samples using the Ziggurat XOR method.
 pub fn Exponential(comptime Precision: type) type {
     
     return struct {
         pub const Self = @This();
         pub const PDist = Distribution(Precision); 
-        lambda: Precision,
+        
+        rate: Precision,
         interface: PDist,
 
         /// Uses Ziggurat
         pub fn sample(self: *const Self, rng: Random) Precision {
             const u: Precision = ziggurat(Precision, rng, &table.ExponentialTable(Precision), pdfStandard, zeroCase, false);
-            return u / self.lambda;
+            return u / self.rate;
         }
         /// Uses the inverse method RNG
         pub fn sampleInv(self: *const Self, rng: Random) Precision {
             const u = rng.float(Precision);
-            return (1.0 / self.lambda) * (-@log(u));
+            return (1.0 / self.rate) * (-@log(u));
         }
 
         pub fn sampleImpl(dist: *const Distribution(Precision), rng: Random) Precision {
@@ -40,9 +36,9 @@ pub fn Exponential(comptime Precision: type) type {
             return self.sample(rng);
         }
 
-        pub fn init(lambda: Precision) @This() {
+        pub fn init(rate: Precision) @This() {
             return .{
-                .lambda = lambda,
+                .rate = rate,
                 .interface = PDist{ .vtable = &.{ .sample = sampleImpl, .format = formatImpl } }
             };
         }
@@ -76,7 +72,7 @@ pub fn Exponential(comptime Precision: type) type {
         }
 
         pub fn format(self: *const Self, writer: *Io.Writer) !void {
-            try writer.print("Exp{{λ={d:.2}}}", .{self.lambda});
+            try writer.print("Exp{{λ={d:.2}}}", .{self.rate});
         }
 
     };

@@ -10,22 +10,17 @@ const uniform = @import("Uniform.zig");
 const Uniform = uniform.Uniform;
 const Interval = uniform.Interval;
 
-/// Implements the scale ($EE (X) = lambda$) exponential distribution.
-/// $ f(x) = lambda*e^(-lambda x) $
-/// The Method generator is the Inverse Algorithm, which is very slow
-/// compared to the modern standard Ziggurat which is used by both
-/// numpy and rust_dist.
-/// Just give me time and I will implement it haha. this gives for free
-/// the implementation of the standard normal distribution, which could be
-/// cool to have
+/// Implements the normal distribution
+/// $ f(x) = 1 / sigma sqrt(2*pi) * exp{ - (x - mu)^2 / 2 sigma^2 $
+/// The sampling method is XOR Ziggurat
 pub fn Normal(comptime Precision: type) type {
     
     return struct {
         pub const Self = @This();
         pub const PDist = Distribution(Precision); 
 
-        mu: Precision,
-        sigma: Precision, // represents sigma^2, but i don't want to write it down
+        mean: Precision,
+        variance: Precision, 
         interface: PDist,
 
         /// Uses Ziggurat
@@ -38,7 +33,7 @@ pub fn Normal(comptime Precision: type) type {
                 zeroCase, 
                 true 
             );
-            return (u * self.sigma) + self.mu;
+            return (u * self.variance) + self.mean;
         }
         
 
@@ -47,10 +42,10 @@ pub fn Normal(comptime Precision: type) type {
             return self.sample(rng);
         }
 
-        pub fn init(mu: Precision, sigma: Precision) @This() {
+        pub fn init(mean: Precision, variance: Precision) @This() {
             return .{
-                .mu = mu,
-                .sigma = sigma,
+                .mean = mean,
+                .variance = variance,
                 .interface = PDist{ .vtable = &.{ .sample = sampleImpl, .format = formatImpl } }
             };
         }
@@ -84,7 +79,10 @@ pub fn Normal(comptime Precision: type) type {
         pub fn pdf(self: *const Self, x: Precision) Precision {
             const pi = std.math.pi;
             const exp = std.math.exp;
-            return (1 / @sqrt(2 * pi)*self.sigma) * exp(- (x-self.mu)*(x-self.mu) / 2*self.sigma);
+
+            const coefficient = 1 / (@sqrt(2 * pi * self.variance));
+            const exponent = - (x - self.mean)*(x - self.mean) / ( 2.0 * self.variance );
+            return coefficient * exp(exponent);
         }
 
         /// To parse the JSON into the UnionDistr, it's needed to ignore the 
@@ -94,11 +92,11 @@ pub fn Normal(comptime Precision: type) type {
             source: anytype,
             options: std.json.ParseOptions,
         ) !Self {
-            const Params = struct { lambda: Precision };
+            const Params = struct { mean: Precision, variance: Precision };
 
             const parsed = try std.json.innerParse(Params, gpa, source, options);
 
-            return init(parsed.lambda);
+            return init(parsed.mean, parsed.variance);
         }
 
         fn formatImpl(dist: *const PDist, writer: *Io.Writer) !void {
@@ -107,7 +105,7 @@ pub fn Normal(comptime Precision: type) type {
         }
 
         pub fn format(self: *const Self, writer: *Io.Writer) !void {
-            try writer.print("Exp{{mu={d:.2}, sigma^2={d:.2}}}", .{self.mu, self.sigma});
+            try writer.print("Normal{{μ={d:.2}, σ²={d:.2}}}", .{self.mean, self.variance});
         }
 
     };
