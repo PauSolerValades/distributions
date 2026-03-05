@@ -9,9 +9,9 @@ const Table = @import("tables.zig").Table;
 pub inline fn ziggurat(
     comptime Precision: type,
     rng: Random, 
-    table: *const Table(Precision), 
-    pdf: *const fn(Precision) Precision, 
-    zeroCase: *const fn(Random, Precision) Precision, 
+    comptime table: *const Table(Precision), 
+    comptime pdf: *const fn(Precision) Precision, 
+    comptime zeroCase: *const fn(Random, Precision) Precision, 
     symmetric: bool
 ) Precision {
     assert(Precision == f64 or Precision == f32);
