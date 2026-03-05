@@ -3,8 +3,10 @@ const Io = std.Io;
 
 const stats = @import("distributions");
 
-const Exp = stats.Exponential(f64);
-const Dist = stats.Distribution(f64);
+const P: type = f32;
+
+const Exp = stats.Exponential(f32);
+const Dist = stats.Distribution(f32);
 
 pub fn main(init: std.process.Init) !void {
     //const arena: std.mem.Allocator = init.arena.allocator();
@@ -27,7 +29,7 @@ pub fn main(init: std.process.Init) !void {
     const dexp: *const Dist = &exp.interface; //ptr distribution
     const e = dexp.sample(rng);
    
-    var esample: [40]f64 = undefined;
+    var esample: [40]f32 = undefined;
     dexp.sampleBuffer(&esample, rng);
 
     try stdout_writer.print("Exponential sample: {d}\n", .{e});

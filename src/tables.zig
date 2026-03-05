@@ -1,10 +1,39 @@
 // table has a constant array size to avoid a dereference on compile time
-pub const Table = struct {
-    x: [257]f64,
-    f: [257]f64,
-};
+pub fn Table(comptime Precision: type) type {
+    return struct {
+        x: [257]Precision,
+        f: [257]Precision,
+    };
+}
 
-pub const exp_table = Table{ .x = exp_x, .f = exp_f };
+pub fn ExponentialTable(comptime Precision: type) Table(Precision) {
+    if (Precision == f64) {
+        return Table(Precision){ .x = exp_x, .f = exp_f };
+    } else {
+        return comptime blk: {
+            var exp_x_casted: [257]f32 = undefined;
+            var exp_f_casted: [257]f32 = undefined;
+
+            for (exp_x, 0..) |x, i| {
+                exp_x_casted[i] = @floatCast(x);
+            }
+
+            for (exp_f, 0..) |f, i| {
+                exp_f_casted[i] = @floatCast(f);
+            }
+            
+            // Break the final struct out of the block to return it
+            break :blk Table(Precision){ .x = exp_x_casted, .f = exp_f_casted };
+        };
+    }
+}
+
+pub fn zigguratExponentialR(comptime Precision: type) Precision {
+    if (Precision == f64) { return 7.697117470131050077; }
+    else if (Precision == f32) { return 7.697117470; }
+    else unreachable;
+}
+
 
 const exp_x: [257]f64 = .{
      8.697117470131052741, 7.697117470131050077, 6.941033629377212577, 6.478378493832569696,

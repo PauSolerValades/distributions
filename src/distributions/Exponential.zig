@@ -5,13 +5,7 @@ const Io = std.Io;
 
 const Distribution = @import("../Distribution.zig").Distribution;
 const ziggurat = @import("../ziggurat.zig").ziggurat;
-const exp_table = @import("../tables.zig").exp_table;
-
-fn zigguratExponentialR(comptime Precision: type) Precision {
-    if (Precision == f64) { return 7.697117470131050077; }
-    else if (Precision == f32) { return 7.697117470; }
-    else unreachable;
-}
+const table = @import("../tables.zig");
 
 /// Implements the scale ($EE (X) = lambda$) exponential distribution.
 /// $ f(x) = lambda*e^(-lambda x) $
@@ -31,7 +25,7 @@ pub fn Exponential(comptime Precision: type) type {
 
         /// Uses Ziggurat
         pub fn sample(self: *const Self, rng: Random) Precision {
-            const u: Precision = ziggurat(rng, &exp_table, pdfStandard, zeroCase, false);
+            const u: Precision = ziggurat(Precision, rng, &table.ExponentialTable(Precision), pdfStandard, zeroCase, false);
             return u / self.lambda;
         }
         /// Uses the inverse method RNG
@@ -54,7 +48,7 @@ pub fn Exponential(comptime Precision: type) type {
 
         pub fn zeroCase(rng: Random, e: Precision) Precision {
             _ = e;
-            return rng.float(Precision) - zigguratExponentialR(Precision);
+            return rng.float(Precision) - table.zigguratExponentialR(Precision);
         }
 
         pub fn pdfStandard(x: Precision) Precision {
