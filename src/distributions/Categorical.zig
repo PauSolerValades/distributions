@@ -35,7 +35,7 @@ pub fn Categorical(comptime Precision: type, comptime DataType: type) type {
             
             // being very pedantic about error propagation :)
             const tol = @as(Precision, @floatFromInt(weights.len)) * std.math.floatEps(Precision);
-            assert(!std.math.approxEqAbs(Precision, sum, 1.0, tol));
+            assert(std.math.approxEqRel(Precision, sum, 1.0, tol));
 
             return .{
                 .weights = weights,

@@ -22,7 +22,6 @@ pub fn ExponentialTable(comptime Precision: type) Table(Precision) {
                 exp_f_casted[i] = @floatCast(f);
             }
             
-            // Break the final struct out of the block to return it
             break :blk Table(Precision){ .x = exp_x_casted, .f = exp_f_casted };
         };
     }
