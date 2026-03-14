@@ -59,7 +59,7 @@ pub fn Exponential(comptime Precision: type) type {
             source: anytype,
             options: std.json.ParseOptions,
         ) !Self {
-            const Params = struct { lambda: Precision };
+            const Params = struct { rate: Precision };
 
             const parsed = try std.json.innerParse(Params, gpa, source, options);
 
