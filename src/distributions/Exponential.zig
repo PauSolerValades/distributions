@@ -63,7 +63,7 @@ pub fn Exponential(comptime Precision: type) type {
 
             const parsed = try std.json.innerParse(Params, gpa, source, options);
 
-            return init(parsed.lambda);
+            return init(parsed.rate);
         }
 
         fn formatImpl(dist: *const PDist, writer: *Io.Writer) !void {
