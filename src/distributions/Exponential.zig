@@ -43,6 +43,13 @@ pub fn Exponential(comptime Precision: type) type {
             };
         }
 
+        pub fn initMean(mean: Precision) @This() {
+            return .{
+                .rate = 1.0 / mean,
+                .interface = PDist{ .vtable = &.{ .sample = sampleImpl, .format = formatImpl } }
+            };
+        }
+
         pub fn zeroCase(rng: Random, e: Precision) Precision {
             _ = e;
             return rng.float(Precision) - table.zigguratExponentialR(Precision);
@@ -59,11 +66,22 @@ pub fn Exponential(comptime Precision: type) type {
             source: anytype,
             options: std.json.ParseOptions,
         ) !Self {
-            const Params = struct { rate: Precision };
+            const Params = struct { 
+                rate: ?Precision = null,
+                mean: ?Precision = null,
+            };
 
             const parsed = try std.json.innerParse(Params, gpa, source, options);
 
-            return init(parsed.rate);
+            if (parsed.rate) |r| {
+                if (parsed.mean != null) return error.ConflictingParameters;
+                
+                return init(r);
+            } else if (parsed.mean) |m| {
+                return initMean(m);
+            } else {
+                return error.MissingRateOrMean;
+            }
         }
 
         fn formatImpl(dist: *const PDist, writer: *Io.Writer) !void {
