@@ -74,13 +74,13 @@ pub fn Exponential(comptime Precision: type) type {
             const parsed = try std.json.innerParse(Params, gpa, source, options);
 
             if (parsed.rate) |r| {
-                if (parsed.mean != null) return error.ConflictingParameters;
+                if (parsed.mean != null) return error.UnexpectedToken;
                 
                 return init(r);
             } else if (parsed.mean) |m| {
                 return initMean(m);
             } else {
-                return error.MissingRateOrMean;
+                return error.MissingField;
             }
         }
 
