@@ -52,9 +52,9 @@ pub fn Exponential(comptime Precision: type) type {
 
         pub fn zeroCase(rng: Random, e: Precision) Precision {
             _ = e;
-            return rng.float(Precision) - table.zigguratExponentialR(Precision);
+            return table.zigguratExponentialR(Precision) - @log(rng.float(Precision));
         }
-
+        
         pub fn pdfStandard(x: Precision) Precision {
             return std.math.exp(-x);
         }
