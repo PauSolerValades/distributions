@@ -7,18 +7,26 @@ const ArrayList = std.ArrayList;
 
 const Distribution = @import("../Distribution.zig").Distribution;
 
-
+/// Empirical Cumulative Distribution Function. (https://en.wikipedia.org/wiki/Empirical_distribution_function)
+/// Given data, s
 pub fn ECDF(comptime Precision: type, comptime DataType: type) type {
+
+    const Bin = struct {
+        value: DataType,
+        cump: Precision,
+    };
 
     return struct {
         const Self = @This();
         const PDist: type = Distribution(DataType);
-        
-        values: []DataType,
-        prob: []Precision,
-        cump: []Precision,
+       
+        bins: std.MultiArrayList(Bin),
         interface: PDist,
-        
+       
+        /// Create an ECDF object.
+        /// Defined for enum (with the number assigned to them), booleans (false < true), int and float.
+        /// Iterates over the list and counts which and how many different numbers are on the data.
+        /// Then computes the probabilites of each element and its cumsum.
         pub fn init(gpa: Allocator, data: []DataType) !Self {
             assert(data.len != 0); 
 
@@ -42,15 +50,16 @@ pub fn ECDF(comptime Precision: type, comptime DataType: type) type {
                 .int, .float => std.mem.sort(DataType, data, {}, comptime std.sort.asc(DataType)),
                 else => @compileError("Type not supported for ECDF"), 
             }
-            
-            // find the duplicates
-            var values: ArrayList(DataType) = .empty;
+          
             var count: ArrayList(usize) = .empty;
+            var values: ArrayList(DataType) = .empty;
+            
             defer {
-                values.deinit(gpa);
                 count.deinit(gpa);
+                values.deinit(gpa);
             }
-    
+
+            // count how many elements are in the data 
             var c: usize = 1;
             for (1..data.len) |i| {
                 if (data[i-1] == data[i]) { 
@@ -61,48 +70,59 @@ pub fn ECDF(comptime Precision: type, comptime DataType: type) type {
                     c = 1;
                 }
             }
-            
-            try count.append(gpa, 1);
+            // Process the final element
+            try count.append(gpa, c);
             try values.append(gpa, data[data.len-1]);
 
-            const v = try values.toOwnedSlice(gpa);
-            const cum = try gpa.alloc(Precision, v.len);
-            const p = try gpa.alloc(Precision, v.len);
-
+            var bins: std.MultiArrayList(Bin) = try .initCapacity(gpa, values.items.len);
+            
             const totalf: Precision = @floatFromInt(data.len);
             var cumulative_sum: usize = 0;
 
             for (count.items, 0..) |n, i| {
                 cumulative_sum += n;
                 const nf: Precision = @floatFromInt(cumulative_sum);
-                cum[i] = nf / totalf;
-                p[i] = @as(Precision, @floatFromInt(n)) / totalf;
+                bins.appendAssumeCapacity(Bin{ .cump = nf / totalf, .value = values.items[i] });
             }
 
             return .{
-                .values = v,
-                .cump = cum,
-                .prob = p,
+                .bins = bins,
                 .interface = .{ .vtable = &.{ .sample = sampleImpl, .format = formatImpl } }
             };
         }
 
         pub fn deinit(self: *const Self, gpa: Allocator) void {
-            gpa.free(self.cump);
-            gpa.free(self.values);
-            gpa.free(self.prob);
+            // to trick the compiler to make the ECDF immutable
+            // we make a copy of the self and free it.
+            var mutable_bins = self.bins;
+            mutable_bins.deinit(gpa);
         }
 
-    
+        /// generates a random [0,1] and returns the first number bigger than it    
+        /// uses binary search to get sweet O(log(n))
         pub inline fn sample(self: *const Self, rng: Random) DataType {
             const u = rng.float(Precision);
-            var i: usize = 0;
-            for (self.cump) |a| {
-                if (u <= a) break;
-                i+=1;
+            
+            var lower: usize = 0;
+            var upper: usize = self.bins.len;
+
+            while (lower < upper) {
+                const i = lower + @divFloor(upper - lower, 2);
+                const p = self.bins.items(.cump)[i];
+                
+                if (u <= p) {
+                    upper = i;
+                } else if (u > p) {
+                    lower = i + 1;
+                }
             }
-            return self.values[i];
+        
+            return self.bins.items(.value)[lower];
         }
+
+        /// exemple: llista [0.2, 0.4, 0.6, 0.8, 1]
+        /// u = 0.7
+        ///
 
         /// Function to put into the VTable of Distribution
         fn sampleImpl(dist: *const PDist, rng: Random) DataType {
@@ -131,14 +151,35 @@ pub fn ECDF(comptime Precision: type, comptime DataType: type) type {
 
         // Example: Categorical( (1, 0.1, 0.1), (2, 0.1, 0.2), (3, 0.1, 0.3) )
         pub fn format(self: *const Self, writer: *Io.Writer) !void {
+            const values = self.bins.items(.value);
+            const cump = self.bins.items(.cump);
+
             try writer.writeAll("ECDF{{ ");
-            for (0..self.values.len - 1) |i| {
-                try writer.print("({d:.2}, {d:.2}, {d:.2}) ", .{self.values[i], self.prob[i], self.cump[i]});
+            for (0..values.len - 1) |i| {
+                try writer.print("({d:.2}, {d:.2}, {d:.2}) ", .{values[i], cump[i+1] - cump[i], cump[i]});
             }
-            const last_i = self.values.len - 1;
-            try writer.print("({d:.2}, {d:.2}, {d:.2}) }}\n", .{self.values[last_i], self.prob[last_i], self.cump[last_i]});
+            const last_i = values.len - 1;
+            try writer.print("({d:.2}, {d:.2}, {d:.2}) }}\n", .{values[last_i], cump[last_i], cump[last_i]});
         }
 
     };
 }
 
+const ta = std.testing.allocator;
+const expectEqualSlices = std.testing.expectEqualSlices;
+
+test "test" {
+
+    var data = [_]u32{0,0,1,1,2,2,3,3};
+
+    const ecdf: ECDF(f32, u32) = try .init(ta, &data);
+    defer ecdf.deinit(ta);
+
+    const values = [_]u32{0,1,2,3};
+    const cump = [_]f32{0.25, 0.50, 0.75, 1};
+
+    try expectEqualSlices(u32, ecdf.bins.items(.value), &values);
+    try expectEqualSlices(f32, ecdf.bins.items(.cump), &cump);
+
+
+}

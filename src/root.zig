@@ -16,3 +16,8 @@ const unions = @import("UnionDist.zig");
 
 pub const ContinuousDistribution = unions.ContinuousDistribution;
 pub const DiscreteDistribution = unions.DiscreteDistribution;
+
+test "Run all tests" {
+    std.testing.refAllDecls(@This());
+    try std.testing.expect(true);
+}
