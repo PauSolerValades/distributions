@@ -20,7 +20,7 @@ pub fn Constant(comptime Precision: type) type {
         pub fn init(c: Precision) Self {
             return .{
                 .value = c,
-                .interface = .{ .vtable = &.{ .sample = sampleImpl, .format = formatImpl } }
+                .interface = .{ .vtable = &.{ .sample = sampleImpl, .cdf = cdfImpl, .format = formatImpl } }
             };
         }
 
@@ -36,6 +36,14 @@ pub fn Constant(comptime Precision: type) type {
             return self.sample(rng);
         }
 
+        pub inline fn cdf(self: *const PDist, Precision) Precision {
+            const self: *const Self = @alignCast(@fieldParentPtr("interface", dist));
+            return self.cdf(x)
+        }
+
+        pub cdf(self: *const Self, x: Precision) Precision {
+            return self.value * x;
+        }
                 
         pub fn jsonParse(
             gpa: std.mem.Allocator,
