@@ -7,14 +7,7 @@ const std = @import("std");
 // build runner to parallelize the build automatically (and the cache system to
 // know when a step doesn't need to be re-run).
 pub fn build(b: *std.Build) void {
-    // Standard target options allow the person running `zig build` to choose
-    // what target to build for. Here we do not override the defaults, which
-    // means any target is allowed, and the default is native. Other options
-    // for restricting supported target set are available.
     const target = b.standardTargetOptions(.{});
-    // Standard optimization options allow the person running `zig build` to select
-    // between Debug, ReleaseSafe, ReleaseFast, and ReleaseSmall. Here we do not
-    // set a preferred release mode, allowing the user to decide how to optimize.
     const optimize = b.standardOptimizeOption(.{});
     // It's also possible to define more custom flags to toggle optional features
     // of this build script using `b.option()`. All defined flags (including
@@ -41,7 +34,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
     });
 
-    // Here we define an executable. An executable needs to have a root module
+        // Here we define an executable. An executable needs to have a root module
     // which needs to expose a `main` function. While we could add a main function
     // to the module defined above, it's sometimes preferable to split business
     // logic and the CLI into two separate modules.
@@ -82,6 +75,28 @@ pub fn build(b: *std.Build) void {
             },
         }),
     });
+
+    // const dtest_mod = b.addModule("dtest", .{
+    //     .root_source_file = b.path("test/kolmogorov-smirnov.zig"),
+    //     .target = target,
+    // });
+
+    const dtest_exe = b.addExecutable(.{
+        .name = "dtest",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("tests/kolmogorov-smirnov.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{
+                .{ .name = "distributions", .module = mod },
+            }
+        }),
+    });
+
+    const gof_step = b.step("gof", "Run goodness of fit tests");
+    const gof_cmd = b.addRunArtifact(dtest_exe);
+    gof_step.dependOn(&gof_cmd.step);
+
 
     const examples_step = b.step("examples", "Compile the examples in \"examples\" folder");
     

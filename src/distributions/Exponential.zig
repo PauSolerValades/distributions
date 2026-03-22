@@ -2,6 +2,7 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 const Random = std.Random;
 const Io = std.Io;
+const exp = std.math.exp;
 
 const Distribution = @import("../Distribution.zig").Distribution;
 const ziggurat = @import("../ziggurat.zig").ziggurat;
@@ -56,7 +57,11 @@ pub fn Exponential(comptime Precision: type) type {
         }
         
         pub fn pdfStandard(x: Precision) Precision {
-            return std.math.exp(-x);
+            return exp(-x);
+        }
+
+        pub fn cdf(self: *const Self, x: Precision) Precision {
+            return 1 - exp(-self.rate*x);
         }
 
         /// To parse the JSON into the UnionDistr, it's needed to ignore the 
