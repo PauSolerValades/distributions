@@ -25,7 +25,17 @@ pub fn Uniform(comptime Precision: type) type {
         max: Precision,
         interval: Interval,
         interface: PDist,
-    
+ 
+        pub fn init(min: Precision, max: Precision, interval: Interval) Self {
+            assert(max > min);
+            return .{
+                .min = min,
+                .max = max,
+                .interval = interval,
+                .interface = .{ .vtable = &.{ .sample = sampleImpl, .cdf = cdfImpl, .format = formatImpl } }
+            };
+        }   
+
         // uses the rng instance to get a float between 0 and 1 and then scales it
         pub inline fn sample(self: *const Self, rng: Random) Precision {
             const scale = self.min + (self.max - self.min);
@@ -58,16 +68,22 @@ pub fn Uniform(comptime Precision: type) type {
             return self.sample(rng);
         }
 
-        pub fn init(min: Precision, max: Precision, interval: Interval) Self {
-            assert(max > min);
-            return .{
-                .min = min,
-                .max = max,
-                .interval = interval,
-                .interface = .{ .vtable = &.{ .sample = sampleImpl, .format = formatImpl } }
-            };
-        }
         
+        pub fn cdfImpl(dist: *const Distribution(Precision), x: Precision) Precision {
+            const self: *const Self = @alignCast(@fieldParentPtr("interface", dist));
+            return self.cdf(x);
+        }
+
+        pub fn cdf(self: *const Self, x: Precision) Precision {
+            if (x < self.min) {
+                return 0.0;
+            } else if (x > self.max) {
+                return 1.0;
+            } else {
+                return (x - a) / (b - a);
+            }
+        }
+
         pub fn jsonParse(
             allocator: std.mem.Allocator,
             source: anytype,
