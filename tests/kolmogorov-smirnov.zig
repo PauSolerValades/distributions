@@ -2,10 +2,11 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 
 const dist = @import("distributions");
+const Distribution = dist.Distribution;
 const ECDF = dist.ECDF;
 const Exp = dist.Exponential; 
 
-pub fn main(init: std.process.Init) void {
+pub fn main(init: std.process.Init) !void {
     var prng = std.Random.DefaultPrng.init(
         blk: {
             var os_seed: u64 = undefined;
@@ -21,29 +22,45 @@ pub fn main(init: std.process.Init) void {
     var sample: [1024]f64 = undefined;
     dexp.sampleBuffer(&sample, rng);
 
-    ksTest(init.gpa, &sample, exp.cdf);
+    const Dn = try ksTest(init.gpa, &sample, dexp);
+    
+    const alpha_99 = 1.95;
+    const reject_null = @sqrt(1024.0) * Dn > alpha_99;
+    if (reject_null) {
+        std.debug.print("Null is rejected (IE your sample does not follow the distribution). p={d}\n", .{Dn});
+    } else {
+        std.debug.print("Null is not rejected (your samples indeed follows the distribution) p={d}\n", .{Dn});
+    }
 }
 
 /// Compute p-value with an $alpha=0.99$ with a Kolmogorov-Smirnov test
-pub fn ksTest(gpa: Allocator, sample: []f64, cdf: *const fn(f64) f64) f64 {
-    _ = cdf;
+pub fn ksTest(gpa: Allocator, sample: []f64, Dist: *const Distribution(f64)) !f64 {
 
-    const ecdf: ECDF(f64, f64) = try .init(sample);
-   
-    // const values = ecdf.bins.items(.value);
-    const cump = ecdf.bins.items(.cum);
+    const ecdf: ECDF(f64, f64) = try .init(gpa, sample);
+    defer ecdf.deinit(gpa);
+
+    const values = ecdf.bins.items(.value);
+    const cump = ecdf.bins.items(.cump);
     const num_distinct_samples = ecdf.bins.len;
-
-    // 1. Compute the number of each sample elements in the ECDF.
-    const num_observations = try gpa.alloc(u64, num_distinct_samples);
     
-    for (0..num_distinct_samples-1) |i| {
-        const p_i = cump[i+1] - cump[i];
-        const float_obs_i = @as(f64, @floatFromInt(num_distinct_samples)) / p_i; // this should be an int!
-        num_observations[i] = @intFromFloat(float_obs_i);
+    var max_diff: f64 = 0;
+    var p_prev: f64 = 0.0;
 
+    // this loop iterates per _interval_ [x_i, x_i+1)
+    for (0..num_distinct_samples) |i| {
+
+        const fei = values[i]; 
+        const p = cump[i];
+        const pi = Dist.cdf(fei);
+
+        const diff_top = @abs(p - pi); // top: higher part of the interval
+        const diff_bottom = @abs(p_prev - pi); // lower part of the interval
+
+        max_diff = @max(max_diff, @max(diff_top, diff_bottom));
+        
+        p_prev = p;
     }
-
-    std.debug.print("{any}\n", .{num_distinct_samples});
+    
+    return max_diff;
 }
 

@@ -87,7 +87,7 @@ pub fn ECDF(comptime Precision: type, comptime DataType: type) type {
 
             return .{
                 .bins = bins,
-                .interface = .{ .vtable = &.{ .sample = sampleImpl, .format = formatImpl } }
+                .interface = .{ .vtable = &.{ .sample = sampleImpl, .cdf = cdfImpl, .format = formatImpl } }
             };
         }
 
@@ -120,16 +120,34 @@ pub fn ECDF(comptime Precision: type, comptime DataType: type) type {
             return self.bins.items(.value)[lower];
         }
 
-        /// exemple: llista [0.2, 0.4, 0.6, 0.8, 1]
-        /// u = 0.7
-        ///
-
         /// Function to put into the VTable of Distribution
         fn sampleImpl(dist: *const PDist, rng: Random) DataType {
             const self: *const Self = @alignCast(@fieldParentPtr("interface", dist));
             return self.sample(rng);
         }
 
+        pub inline fn cdf(self: *const Self, x: Precision) Precision {
+            var lower: usize = 0;
+            var upper: usize = self.bins.len;
+
+            while (lower < upper) {
+                const i = lower + @divFloor(upper - lower, 2);
+                const p = self.bins.items(.cump)[i];
+                
+                if (x <= p) {
+                    upper = i;
+                } else if (x > p) {
+                    lower = i + 1;
+                }
+            }
+        
+            return self.bins.items(.cump)[lower];
+        }
+
+        pub fn cdfImpl(dist: *const PDist, x: Precision) Precision {
+            const self: *const Self = @alignCast(@fieldParentPtr("interface", dist));
+            return self.cdf(x);
+        }
                 
         pub fn jsonParse(
             gpa: Allocator,
