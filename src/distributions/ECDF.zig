@@ -87,7 +87,7 @@ pub fn ECDF(comptime Precision: type, comptime DataType: type) type {
 
             return .{
                 .bins = bins,
-                .interface = .{ .vtable = &.{ .sample = sampleImpl, .cdf = cdfImpl, .format = formatImpl } }
+                .interface = .{ .vtable = &.{ .sample = sampleImpl, .format = formatImpl } }
             };
         }
 
@@ -126,7 +126,7 @@ pub fn ECDF(comptime Precision: type, comptime DataType: type) type {
             return self.sample(rng);
         }
 
-        pub inline fn cdf(self: *const Self, x: Precision) Precision {
+        pub fn cdf(self: *const Self, x: Precision) Precision {
             var lower: usize = 0;
             var upper: usize = self.bins.len;
 
@@ -144,10 +144,6 @@ pub fn ECDF(comptime Precision: type, comptime DataType: type) type {
             return self.bins.items(.cump)[lower];
         }
 
-        pub fn cdfImpl(dist: *const PDist, x: Precision) Precision {
-            const self: *const Self = @alignCast(@fieldParentPtr("interface", dist));
-            return self.cdf(x);
-        }
                 
         pub fn jsonParse(
             gpa: Allocator,
@@ -166,8 +162,6 @@ pub fn ECDF(comptime Precision: type, comptime DataType: type) type {
             try self.format(writer);
         }
 
-
-        // Example: Categorical( (1, 0.1, 0.1), (2, 0.1, 0.2), (3, 0.1, 0.3) )
         pub fn format(self: *const Self, writer: *Io.Writer) !void {
             const values = self.bins.items(.value);
             const cump = self.bins.items(.cump);
@@ -198,6 +192,4 @@ test "test" {
 
     try expectEqualSlices(u32, ecdf.bins.items(.value), &values);
     try expectEqualSlices(f32, ecdf.bins.items(.cump), &cump);
-
-
 }
