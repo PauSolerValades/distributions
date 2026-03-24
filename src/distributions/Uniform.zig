@@ -32,7 +32,7 @@ pub fn Uniform(comptime Precision: type) type {
                 .min = min,
                 .max = max,
                 .interval = interval,
-                .interface = .{ .vtable = &.{ .sample = sampleImpl, .cdf = cdfImpl, .format = formatImpl } }
+                .interface = .{ .vtable = &.{ .sample = sampleImpl, .format = formatImpl } }
             };
         }   
 
@@ -68,20 +68,28 @@ pub fn Uniform(comptime Precision: type) type {
             return self.sample(rng);
         }
 
-        
-        pub fn cdfImpl(dist: *const Distribution(Precision), x: Precision) Precision {
-            const self: *const Self = @alignCast(@fieldParentPtr("interface", dist));
-            return self.cdf(x);
-        }
+        pub fn unifCdf(min: Precision, max: Precision, interval: Interval, x: Precision) Precision {
+            const CompareOperator = std.math.CompareOperator;
+            const lower: CompareOperator = switch (interval) {
+                .oo, .oc => .lt,
+                .co, .cc => .lte,    
+            };
+            const upper: CompareOperator = switch (interval) {
+                .oc, .cc => .gt,
+                .co, .oo => .gte,
+            };
 
-        pub fn cdf(self: *const Self, x: Precision) Precision {
-            if (x < self.min) {
+            if (std.math.order(x, min).compare(lower)) {
                 return 0.0;
-            } else if (x > self.max) {
+            } else if (std.math.order(x, max).compare(upper)) {
                 return 1.0;
             } else {
-                return (x - a) / (b - a);
+                return (x - min) / (max - min);
             }
+        }
+       
+        pub fn cdf(self: *const Self, x: Precision) Precision {
+            return unifCdf(self.min, self.max, self.Interval, x);             
         }
 
         pub fn jsonParse(
