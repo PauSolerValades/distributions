@@ -35,7 +35,7 @@ pub fn Normal(comptime Precision: type) type {
             );
             return (u * self.variance) + self.mean;
         }
-        
+
 
         pub fn sampleImpl(dist: *const Distribution(Precision), rng: Random) Precision {
             const self: *const Self = @alignCast(@fieldParentPtr("interface", dist));
@@ -53,7 +53,7 @@ pub fn Normal(comptime Precision: type) type {
         pub fn zeroCase(rng: Random, u: Precision) Precision {
             var x: Precision = 1.0;
             var y: Precision = 0.0;
-            
+
             const unif: Uniform(Precision) = .init(0,1, Interval.oo);
             while (-2.0 * y < x*x) {
                 const x_ = unif.sample(rng);
@@ -76,13 +76,44 @@ pub fn Normal(comptime Precision: type) type {
             return (1.0 / @sqrt(2 * pi)) * exp(- (x*x) / 2.0);
         }
 
-        pub fn pdf(self: *const Self, x: Precision) Precision {
+        pub fn normPdf(mean: Precision, variance: Precision, x: Precision) Precision {
             const pi = std.math.pi;
             const exp = std.math.exp;
 
-            const coefficient = 1 / (@sqrt(2 * pi * self.variance));
-            const exponent = - (x - self.mean)*(x - self.mean) / ( 2.0 * self.variance );
+            const coefficient = 1 / (@sqrt(2 * pi * variance));
+            const exponent = - (x - mean)*(x - mean) / ( 2.0 * variance );
             return coefficient * exp(exponent);
+        }
+
+        pub fn pdf(self: *const Self, x: Precision) Precision {
+            return normPdf(self.mean, self.variance, x);    
+        }
+
+        fn cdfStandard(x: f64) f64 {
+            if (x < 0.0) return 1.0 - cdfStandard(-x);
+
+            const p = 0.2316419;
+            const b1 = 0.319381530;
+            const b2 = -0.356563782;
+            const b3 = 1.781477937;
+            const b4 = -1.821255978;
+            const b5 = 1.330274429;
+
+            const t = 1.0 / (1.0 + p * x);
+
+            const poly = t * (b1 + t * (b2 + t * (b3 + t * (b4 + t * b5))));
+
+            return 1.0 - pdfStandard(x) * poly;
+        }
+
+        pub fn normCdf(mean: Precision, variance: Precision, x: Precision) Precision {
+            const z = (x - mean) / @sqrt(variance);
+            return cdfStandard(z);
+        }
+
+        /// Instance method for your anytype ksTestCont
+        pub fn cdf(self: *const Self, x: Precision) Precision {
+            return normCdf(self.mean, self.variance, x);
         }
 
         /// To parse the JSON into the UnionDistr, it's needed to ignore the 

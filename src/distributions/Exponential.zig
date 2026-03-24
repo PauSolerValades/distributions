@@ -68,7 +68,11 @@ pub fn Exponential(comptime Precision: type) type {
         }
         
         pub fn pdfStandard(x: Precision) Precision {
-            return exp(-x);
+            return expPdf(1, x);
+        }
+
+        pub fn expPdf(rate: Precision, x: Precision) Precision {
+            return rate * exp(- rate * x);
         }
 
         pub fn expCdf(rate: Precision, x: Precision) Precision {
@@ -112,8 +116,6 @@ pub fn Exponential(comptime Precision: type) type {
                 return error.MissingField;
             }
         }
-
-        
     };
 }
 

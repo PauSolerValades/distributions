@@ -162,8 +162,6 @@ pub fn ECDF(comptime Precision: type, comptime DataType: type) type {
             try self.format(writer);
         }
 
-
-        // Example: Categorical( (1, 0.1, 0.1), (2, 0.1, 0.2), (3, 0.1, 0.3) )
         pub fn format(self: *const Self, writer: *Io.Writer) !void {
             const values = self.bins.items(.value);
             const cump = self.bins.items(.cump);
@@ -194,6 +192,4 @@ test "test" {
 
     try expectEqualSlices(u32, ecdf.bins.items(.value), &values);
     try expectEqualSlices(f32, ecdf.bins.items(.cump), &cump);
-
-
 }
