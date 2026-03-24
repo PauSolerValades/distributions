@@ -11,8 +11,10 @@ Distributions implemented:
 * **Arbitrary Data Types**: Discrete distributions (like Categorical and ECDF) can sample and return any Zig type such as ints, floats, enums and bools.
 * **Dual Polymorphism**: two approaches of polymorphism, choose from:
     * **Tagged Unions:** Zero-overhead, compiler-inlined dispatch for closed sets of distributions.
-    * **Intrusive Interfaces:** Fully dynamic, user-extensible dispatch for runtime flexibility.
+    * **Intrusive Interface:** Fully dynamic, user-extensible dispatch for runtime flexibility.
 * **Immutable Zero-Allocations post-init:** Distributions just require allocations (_if they require it_ as use of arrays) on init, then the object is immutable and just to be sampled with.
+* **pdf $f(x)$ and cdf $F(x)$**: Implemented in Exponential and Normal distributions.
+* **Goodness-of-Fit**: Kolmogorov-Smirnov test for both continuous distributions.
 
 ## Tutorial 
 _[See `src/main.zig` for the code]_
@@ -59,26 +61,25 @@ dexp.sampleBuffer(&esample, rng);
 
 In the `examples` folders there are 5 examples showcasing features:
 - `continous_distribution.zig`: Creates and samples from the Continous Distributions. Shows how to sample from an array implementing the interface `Distribution` with different types. 
-- `discrete_distribution.zig`: Creates and samples from Discrete Distributions. Analogous to `continous_distribution.zig`
+-  `discrete_distribution.zig`: Creates and samples from Discrete Distributions. Analogous to `continous_distribution.zig`
 - `union.zig`: Showcases how to initialize an array with the union `ContinousDistribution` and sample from it.
 - `union_disc.zig`: Analogous as the `union.zig`, but showcases the `DataType` as an `enum` and numeric types.
 - `union_json.zig`: Defines an struct with the union distributions and reads from a JSON to have an struct with different distributions, both continuous and discrete.
 
-
-## Aims
-
-1. Support widely used Continous Distributions: Normal, logNormal, Cauchy, Gamma, Weibull...
-2. Support widely used Discrete Distributions: Geometrical, Binomial, Bernoulli, Poisson...
-3. Add support for the usually common functions, despite it's main focus should be just sampling. In R terminology those would be:
-  - rfunc: random number generation
-  - qfunc: quartile $z_{\alpha/2}$
-  - dfunc: theoretical density function $f(x)$
-  - pfunc: cumulative density funciton $F(x)$
-
 ## Design
 
-I think this problem is absolutely suited for an _Intrusive Interface_ polymorphism. All implementation of the interface `Distribution` must implement the same functions `pdf(), cdf(), sample(), ppf()`, but there might be functions that the implementes share the exact same code, such as `sampleBuffer`, which just calls `sample()` on loop, regarding of what sample is.
+This library emerged to solve a very specific need: change the configuration of a Discrete Event Simulation without recompiling the code, that is, to provide dynamic runtime dispatch. I've landed (inspired by Writergate) to use an Intrusive Interface (`Distribution.zig`) with a vtable. That means, every distribution struct can be instantiated standalone, or with the pointer to a `Distribution`. This makes the Distribution Type generic at runtime, at the cost of dereferencing the vtable function pointer everytime sample its called.
 
-Regarding the Union, it's also a useful to make the polymorphism at run time, eg, reading from a JSON config to know what to sample to.
+To make it generic from a file, I also needed to implement Polymorphism from a Tagged Union, to be able to write a JSON config file. As discrete and continuous distributions are different, two unions are provided: `ContinousDistribution` and `DiscreteDistribution`. Every distribution that can be loaded from a JSON needs a custom load JSON method to avoid writing the `interface` parameter on the JSON.
 
+**Virtual Functions: what to have**
 
+My OOP instincts told me that the VTable should contain all the functions to provide always dynamic runtime dispatch. Fortunately, my gut told me it was a bad idea. To implement `cdf` for the Kolmogorov-Smirnov test I opted - as it will never be needed at runtime - to use `anytype` for the distribution parameter. All the reasoning was that I do not need that on my DES, and it just cluttered the design a lot. By using `anytype` the compiler enforces at compile time that the passed struct implements a `cdf` method, giving us complete type safety without the overhead of a VTable.
+
+To implement other functions can be for sure interesting, but until not needed I am not going to do it! This is just a quick tangent to arrive to my destination better.
+
+## TODO
+1. `Distribution(Precision)` -> `Distribution(Precision, Sample)` to allow generalization of the second data type.
+2. Related to 1, this involves changing all the structure and comparisons of both `Categorical` and `ECDF` to the `utils.zig` function. Needed to implement both
+3. Change constant from Continuous to discrete, as it is really discrete.
+4. Finish the CDF of empirical distributions.
