@@ -22,7 +22,7 @@ pub fn main(init: std.process.Init) !void {
     var sample: [1024]f64 = undefined;
     dexp.sampleBuffer(&sample, rng);
 
-    const Dn = try ksTest(init.gpa, &sample, dexp);
+    const Dn = try ksTestCont(init.gpa, &sample, &exp);
     
     const alpha_99 = 1.95;
     const reject_null = @sqrt(1024.0) * Dn > alpha_99;
@@ -33,10 +33,9 @@ pub fn main(init: std.process.Init) !void {
     }
 }
 
-/// Compute p-value with an $alpha=0.99$ with a Kolmogorov-Smirnov test
-pub fn ksTest(gpa: Allocator, sample: []f64, Dist: *const Distribution(f64)) !f64 {
-
-    const ecdf: ECDF(f64, f64) = try .init(gpa, sample);
+/// Compute p-value with an \alpha=0.99 with a Kolmogorov-Smirnov test for continuous distributions
+pub fn ksTestCont(gpa: std.mem.Allocator, sample: []f64, d: anytype) !f64 {
+    const ecdf = try ECDF(f64, f64).init(gpa, sample);
     defer ecdf.deinit(gpa);
 
     const values = ecdf.bins.items(.value);
@@ -46,21 +45,18 @@ pub fn ksTest(gpa: Allocator, sample: []f64, Dist: *const Distribution(f64)) !f6
     var max_diff: f64 = 0;
     var p_prev: f64 = 0.0;
 
-    // this loop iterates per _interval_ [x_i, x_i+1)
     for (0..num_distinct_samples) |i| {
-
         const fei = values[i]; 
         const p = cump[i];
-        const pi = Dist.cdf(fei);
+        
+        const pi = d.cdf(fei);
 
-        const diff_top = @abs(p - pi); // top: higher part of the interval
-        const diff_bottom = @abs(p_prev - pi); // lower part of the interval
+        const diff_top = @abs(p - pi);
+        const diff_bottom = @abs(p_prev - pi);
 
         max_diff = @max(max_diff, @max(diff_top, diff_bottom));
-        
         p_prev = p;
     }
     
     return max_diff;
 }
-

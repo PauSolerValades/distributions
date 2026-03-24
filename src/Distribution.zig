@@ -5,7 +5,6 @@ const Io = std.Io;
 pub fn VTable(comptime Precision: type) type {
     return struct {
         sample: *const fn (dist: *const Distribution(Precision), rng: Random) Precision,
-        cdf: *const fn (dist: *const Distribution(Precision), x: Precision) Precision,
         format: *const fn (dist: *const Distribution(Precision), writer: *Io.Writer) std.Io.Writer.Error!void,
     };
 }
@@ -20,10 +19,6 @@ pub fn Distribution(comptime Precision: type) type {
             return self.vtable.sample(self, rng);
         }
     
-        pub inline fn cdf(self: *const Self, x: Precision) Precision {
-            return self.vtable.cdf(self, x);
-        }
-
         // here should go common functions that behave the same for all the functionalities
         // that is, for example, fill a buffer with n samples. samples has to be the implemented
         // and the nSamples is here and just calls samples.

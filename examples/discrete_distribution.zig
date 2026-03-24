@@ -53,7 +53,7 @@ pub fn main(init: std.process.Init) !void {
                                 
     // when creating the object, the data is sorted, counted and given weigths.
     // this can be accessed like this:
-    try stdout_writer.print("Accumulated probability: {any}\n Distinct values: {any}\n", .{ecdf.cump, ecdf.values});
+    try stdout_writer.print("Accumulated probability: {any}\n Distinct values: {any}\n", .{ecdf.bins.items(.cump), ecdf.bins.items(.value)});
 
     const decdf = &ecdf.interface;
     const a: i32 = decdf.sample(rng);

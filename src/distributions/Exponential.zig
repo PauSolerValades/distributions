@@ -27,7 +27,6 @@ pub fn Exponential(comptime Precision: type) type {
                 .interface = PDist{ 
                     .vtable = &.{
                         .sample = sampleImpl,
-                        .cdf = cdfImpl,
                         .format = formatImpl,
                     } 
                 }
@@ -35,15 +34,14 @@ pub fn Exponential(comptime Precision: type) type {
         }
 
         pub fn initMean(mean: Precision) @This() {
-            const vtable = .{
-                .sample = sampleImpl,
-                .cdf = cdf,
-                .format = formatImpl,
-            };
-
             return .{
                 .rate = 1.0 / mean,
-                .interface = PDist{ .vtable = &vtable }
+                .interface = PDist{ 
+                    .vtable = &.{
+                        .sample = sampleImpl,
+                        .format = formatImpl,
+                    }
+                }
             };
         }
 
@@ -73,13 +71,12 @@ pub fn Exponential(comptime Precision: type) type {
             return exp(-x);
         }
 
-        pub fn cdfImpl(dist: *const Distribution(Precision), x: Precision) Precision {
-            const self: *const Self = @alignCast(@fieldParentPtr("interface", dist));
-            return self.cdf(x);
+        pub fn expCdf(rate: Precision, x: Precision) Precision {
+            return 1 - exp(-rate*x);
         }
 
         pub fn cdf(self: *const Self, x: Precision) Precision {
-            return 1 - exp(-self.rate*x);
+            return expCdf(self.rate, x);
         }
 
         fn formatImpl(dist: *const PDist, writer: *Io.Writer) !void {
