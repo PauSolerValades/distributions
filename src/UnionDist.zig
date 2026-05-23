@@ -4,13 +4,13 @@ const Io = std.Io;
 
 const Constant = @import("distributions/Constant.zig").Constant;
 const Exponential = @import("distributions/Exponential.zig").Exponential;
+const Normal = @import("distributions/Normal.zig").Normal;
 const Uniform = @import("distributions/Uniform.zig").Uniform;
 
 const Categorical = @import("distributions/Categorical.zig").Categorical;
 const ECDF = @import("distributions/ECDF.zig").ECDF;
 
 pub fn ContinuousDistribution(comptime Precision: type) type {
-    
     if (@typeInfo(Precision) != .float) @compileError("Precision must be a floating point number\n");
 
     return union(enum) {
@@ -18,10 +18,11 @@ pub fn ContinuousDistribution(comptime Precision: type) type {
 
         constant: Constant(Precision),
         exponential: Exponential(Precision),
+        normal: Normal(Precision),
         uniform: Uniform(Precision),
-        
+
         pub fn sample(self: *const Self, rng: Random) Precision {
-            switch(self.*) {
+            switch (self.*) {
                 // generates this:
                 // .constant => |*c| return c.sample(rng),
                 // .exponential => |*exp| return exp.sample(rng),
@@ -32,7 +33,7 @@ pub fn ContinuousDistribution(comptime Precision: type) type {
         }
 
         pub fn format(self: *const Self, writer: *Io.Writer) !void {
-            switch(self.*) {
+            switch (self.*) {
                 // generates this:
                 // .constant => |*c| return c.sample(rng),
                 // .exponential => |*exp| return exp.sample(rng),
@@ -41,14 +42,12 @@ pub fn ContinuousDistribution(comptime Precision: type) type {
                 inline else => |*dist| try dist.format(writer),
             }
         }
-
     };
 }
 
 pub fn DiscreteDistribution(comptime Precision: type, comptime DataType: type) type {
-
     if (@typeInfo(Precision) != .float) @compileError("Precision must be a floating point number\n");
-    
+
     return union(enum) {
         const Self = @This();
 
@@ -57,13 +56,13 @@ pub fn DiscreteDistribution(comptime Precision: type, comptime DataType: type) t
         ecdf: ECDF(Precision, DataType),
 
         pub fn sample(self: *const Self, rng: Random) DataType {
-            switch(self.*) {
+            switch (self.*) {
                 inline else => |*dist| return dist.sample(rng),
             }
         }
 
         pub fn format(self: *const Self, writer: *Io.Writer) !void {
-            switch(self.*) {
+            switch (self.*) {
                 // generates this:
                 // .constant => |*c| return c.sample(rng),
                 // .exponential => |*exp| return exp.sample(rng),
@@ -72,7 +71,5 @@ pub fn DiscreteDistribution(comptime Precision: type, comptime DataType: type) t
                 inline else => |*dist| try dist.format(writer),
             }
         }
-
-
     };
 }
