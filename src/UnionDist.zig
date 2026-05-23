@@ -5,6 +5,7 @@ const Io = std.Io;
 const Constant = @import("distributions/Constant.zig").Constant;
 const Exponential = @import("distributions/Exponential.zig").Exponential;
 const Normal = @import("distributions/Normal.zig").Normal;
+const Pareto = @import("distributions/Pareto.zig").Pareto;
 const Uniform = @import("distributions/Uniform.zig").Uniform;
 
 const Categorical = @import("distributions/Categorical.zig").Categorical;
@@ -19,6 +20,7 @@ pub fn ContinuousDistribution(comptime Precision: type) type {
         constant: Constant(Precision),
         exponential: Exponential(Precision),
         normal: Normal(Precision),
+        pareto: Pareto(Precision),
         uniform: Uniform(Precision),
 
         pub fn sample(self: *const Self, rng: Random) Precision {

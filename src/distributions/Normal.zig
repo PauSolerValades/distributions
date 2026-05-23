@@ -14,28 +14,21 @@ const Interval = uniform.Interval;
 /// $ f(x) = 1 / sigma sqrt(2*pi) * exp{ - (x - mu)^2 / 2 sigma^2 $
 /// The sampling method is XOR Ziggurat
 pub fn Normal(comptime Precision: type) type {
-    
     return struct {
         pub const Self = @This();
-        pub const PDist = Distribution(Precision); 
+        pub const PDist = Distribution(Precision);
 
         mean: Precision,
-        variance: Precision, 
+        variance: Precision,
         interface: PDist,
+
+        unif: Uniform(Precision),
 
         /// Uses Ziggurat
         pub fn sample(self: *const Self, rng: Random) Precision {
-            const u: Precision = ziggurat(
-                Precision, 
-                rng, 
-                &table.NormalTable(Precision), 
-                pdfStandard, 
-                zeroCase, 
-                true 
-            );
+            const u: Precision = ziggurat(Precision, rng, &table.NormalTable(Precision), pdfStandard, zeroCase, true);
             return (u * self.variance) + self.mean;
         }
-
 
         pub fn sampleImpl(dist: *const Distribution(Precision), rng: Random) Precision {
             const self: *const Self = @alignCast(@fieldParentPtr("interface", dist));
@@ -46,7 +39,10 @@ pub fn Normal(comptime Precision: type) type {
             return .{
                 .mean = mean,
                 .variance = variance,
-                .interface = PDist{ .vtable = &.{ .sample = sampleImpl, .format = formatImpl } }
+                .unif = .init(0, 1, Interval.oo),
+                .interface = PDist{
+                    .vtable = &.{ .sample = sampleImpl, .format = formatImpl },
+                },
             };
         }
 
@@ -54,13 +50,13 @@ pub fn Normal(comptime Precision: type) type {
             var x: Precision = 1.0;
             var y: Precision = 0.0;
 
-            const unif: Uniform(Precision) = .init(0,1, Interval.oo);
-            while (-2.0 * y < x*x) {
+            const unif: Uniform(Precision) = .init(0, 1, Interval.oo);
+            while (-2.0 * y < x * x) {
                 const x_ = unif.sample(rng);
                 const y_ = unif.sample(rng);
 
                 x = @log(x_) / table.zigguratNormalR(Precision);
-                y = @log(y_); 
+                y = @log(y_);
             }
 
             if (u < 0.0) {
@@ -73,7 +69,7 @@ pub fn Normal(comptime Precision: type) type {
         pub fn pdfStandard(x: Precision) Precision {
             const pi = std.math.pi;
             const exp = std.math.exp;
-            return (1.0 / @sqrt(2 * pi)) * exp(- (x*x) / 2.0);
+            return (1.0 / @sqrt(2 * pi)) * exp(-(x * x) / 2.0);
         }
 
         pub fn normPdf(mean: Precision, variance: Precision, x: Precision) Precision {
@@ -81,12 +77,12 @@ pub fn Normal(comptime Precision: type) type {
             const exp = std.math.exp;
 
             const coefficient = 1 / (@sqrt(2 * pi * variance));
-            const exponent = - (x - mean)*(x - mean) / ( 2.0 * variance );
+            const exponent = -(x - mean) * (x - mean) / (2.0 * variance);
             return coefficient * exp(exponent);
         }
 
         pub fn pdf(self: *const Self, x: Precision) Precision {
-            return normPdf(self.mean, self.variance, x);    
+            return normPdf(self.mean, self.variance, x);
         }
 
         fn cdfStandard(x: f64) f64 {
@@ -116,7 +112,7 @@ pub fn Normal(comptime Precision: type) type {
             return normCdf(self.mean, self.variance, x);
         }
 
-        /// To parse the JSON into the UnionDistr, it's needed to ignore the 
+        /// To parse the JSON into the UnionDistr, it's needed to ignore the
         /// .interface method when parsing the json to create the union!
         pub fn jsonParse(
             gpa: Allocator,
@@ -136,12 +132,7 @@ pub fn Normal(comptime Precision: type) type {
         }
 
         pub fn format(self: *const Self, writer: *Io.Writer) !void {
-            try writer.print("Normal{{μ={d:.2}, σ²={d:.2}}}", .{self.mean, self.variance});
+            try writer.print("Normal{{μ={d:.2}, σ²={d:.2}}}", .{ self.mean, self.variance });
         }
-
     };
 }
-
-
-
-

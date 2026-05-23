@@ -3,46 +3,37 @@ const Allocator = std.mem.Allocator;
 const Random = std.Random;
 const Io = std.Io;
 const exp = std.math.exp;
+const assert = std.debug.assert;
 
 const Distribution = @import("../Distribution.zig").Distribution;
 const ziggurat = @import("../ziggurat.zig").ziggurat;
 const table = @import("../tables.zig");
 
-
 /// Implements the rate ($EE (X) = lambda$) exponential distribution.
 /// $ f(x) = lambda*e^(-lambda x) $
 /// It samples using the Ziggurat XOR method.
 pub fn Exponential(comptime Precision: type) type {
-    
     return struct {
         pub const Self = @This();
-        pub const PDist = Distribution(Precision); 
-        
+        pub const PDist = Distribution(Precision);
+
         rate: Precision,
         interface: PDist,
 
         pub fn init(rate: Precision) @This() {
-            return .{
-                .rate = rate,
-                .interface = PDist{ 
-                    .vtable = &.{
-                        .sample = sampleImpl,
-                        .format = formatImpl,
-                    } 
-                }
-            };
+            assert(rate >= 0);
+            return .{ .rate = rate, .interface = PDist{ .vtable = &.{
+                .sample = sampleImpl,
+                .format = formatImpl,
+            } } };
         }
 
         pub fn initMean(mean: Precision) @This() {
-            return .{
-                .rate = 1.0 / mean,
-                .interface = PDist{ 
-                    .vtable = &.{
-                        .sample = sampleImpl,
-                        .format = formatImpl,
-                    }
-                }
-            };
+            assert(mean >= 0);
+            return .{ .rate = 1.0 / mean, .interface = PDist{ .vtable = &.{
+                .sample = sampleImpl,
+                .format = formatImpl,
+            } } };
         }
 
         /// Uses Ziggurat
@@ -50,7 +41,7 @@ pub fn Exponential(comptime Precision: type) type {
             const u: Precision = ziggurat(Precision, rng, &table.ExponentialTable(Precision), pdfStandard, zeroCase, false);
             return u / self.rate;
         }
-        
+
         /// Uses the inverse method RNG
         pub fn sampleInv(self: *const Self, rng: Random) Precision {
             const u = rng.float(Precision);
@@ -66,17 +57,17 @@ pub fn Exponential(comptime Precision: type) type {
             _ = e;
             return table.zigguratExponentialR(Precision) - @log(rng.float(Precision));
         }
-        
+
         pub fn pdfStandard(x: Precision) Precision {
             return expPdf(1, x);
         }
 
         pub fn expPdf(rate: Precision, x: Precision) Precision {
-            return rate * exp(- rate * x);
+            return rate * exp(-rate * x);
         }
 
         pub fn expCdf(rate: Precision, x: Precision) Precision {
-            return 1 - exp(-rate*x);
+            return 1 - exp(-rate * x);
         }
 
         pub fn cdf(self: *const Self, x: Precision) Precision {
@@ -92,14 +83,14 @@ pub fn Exponential(comptime Precision: type) type {
             try writer.print("Exp{{λ={d:.2}}}", .{self.rate});
         }
 
-        /// To parse the JSON into the UnionDistr, it's needed to ignore the 
+        /// To parse the JSON into the UnionDistr, it's needed to ignore the
         /// .interface method when parsing the json to create the union!
         pub fn jsonParse(
             gpa: Allocator,
             source: anytype,
             options: std.json.ParseOptions,
         ) !Self {
-            const Params = struct { 
+            const Params = struct {
                 rate: ?Precision = null,
                 mean: ?Precision = null,
             };
@@ -108,7 +99,7 @@ pub fn Exponential(comptime Precision: type) type {
 
             if (parsed.rate) |r| {
                 if (parsed.mean != null) return error.UnexpectedToken;
-                
+
                 return init(r);
             } else if (parsed.mean) |m| {
                 return initMean(m);
@@ -118,7 +109,3 @@ pub fn Exponential(comptime Precision: type) type {
         }
     };
 }
-
-
-
-
