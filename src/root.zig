@@ -6,6 +6,7 @@ pub const Distribution = @import("Distribution.zig").Distribution;
 pub const Constant = @import("distributions/Constant.zig").Constant;
 pub const Exponential = @import("distributions/Exponential.zig").Exponential;
 pub const Normal = @import("distributions/Normal.zig").Normal;
+pub const Pareto = @import("distributions/Pareto.zig");
 pub const Uniform = @import("distributions/Uniform.zig").Uniform;
 pub const Interval = @import("distributions/Uniform.zig").Interval;
 
