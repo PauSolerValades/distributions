@@ -25,7 +25,7 @@ pub fn Pareto(comptime Precision: type) type {
 
         /// Uses Ziggurat
         pub fn sample(self: *const Self, rng: Random) Precision {
-            return self.shape * self.unif.sample(rng) * std.math.exp(self.scale);
+            return self.scale * std.math.pow(Precision, self.unif.sample(rng), -1.0 / self.shape);
         }
 
         pub fn sampleImpl(dist: *const Distribution(Precision), rng: Random) Precision {
