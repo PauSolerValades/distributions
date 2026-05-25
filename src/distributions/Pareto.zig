@@ -26,6 +26,12 @@ pub fn Pareto(comptime Precision: type) type {
             return self.scale * std.math.exp(self.exp.sample(rng) / self.shape);
         }
 
+        /// Pareto CDF: F(x) = 1 - (scale / x)^shape  for x >= scale, else 0
+        pub fn cdf(self: *const Self, x: Precision) Precision {
+            if (x < self.scale) return 0.0;
+            return 1.0 - std.math.pow(Precision, self.scale / x, self.shape);
+        }
+
         pub fn sampleImpl(dist: *const Distribution(Precision), rng: Random) Precision {
             const self: *const Self = @alignCast(@fieldParentPtr("interface", dist));
             return self.sample(rng);

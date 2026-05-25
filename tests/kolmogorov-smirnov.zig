@@ -4,7 +4,8 @@ const Allocator = std.mem.Allocator;
 const dist = @import("distributions");
 const Distribution = dist.Distribution;
 const ECDF = dist.ECDF;
-const Exp = dist.Exponential; 
+const Exp = dist.Exponential;
+const Pareto = dist.Pareto;
 const Norm = dist.Normal;
 
 pub fn main(init: std.process.Init) !void {
@@ -57,6 +58,22 @@ pub fn main(init: std.process.Init) !void {
         try stdout_writer.print("  [FAIL] Null rejected. Sample does NOT follow distribution. D={d:.4}\n", .{Dn_norm});
     } else {
         try stdout_writer.print("  [PASS] Null not rejected. Sampler is accurate. D={d:.4}\n", .{Dn_norm});
+    }
+
+    const pareto: Pareto(f64) = Pareto(f64).init(2.5, 1.0);
+    const dpareto = &pareto.interface;
+
+    var sample_pareto: [n_samples]f64 = undefined;
+    dpareto.sampleBuffer(&sample_pareto, rng);
+
+    const Dn_pareto = try ksTestCont(init.gpa, &sample_pareto, &pareto);
+    const reject_pareto = Dn_pareto > critical_value;
+
+    try stdout_writer.print("\nPareto(α=2.50, x_m=1.00):\n", .{});
+    if (reject_pareto) {
+        try stdout_writer.print("  [FAIL] Null rejected. Sample does NOT follow distribution. D={d:.4}\n", .{Dn_pareto});
+    } else {
+        try stdout_writer.print("  [PASS] Null not rejected. Sampler is accurate. D={d:.4}\n", .{Dn_pareto});
     }
 }
 /// Compute p-value with an \alpha=0.99 with a Kolmogorov-Smirnov test for continuous distributions
