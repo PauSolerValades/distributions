@@ -6,13 +6,11 @@ const assert = std.debug.assert;
 
 const Distribution = @import("../Distribution.zig").Distribution;
 const table = @import("../tables.zig");
-const uniform = @import("Uniform.zig");
-const Uniform = uniform.Uniform;
-const Interval = uniform.Interval;
+const Exponential = @import("Exponential.zig").Exponential;
 
-/// Implements the normal distribution
-/// $ f(x) = 1 / sigma sqrt(2*pi) * exp{ - (x - mu)^2 / 2 sigma^2 $
-/// The sampling method is XOR Ziggurat
+/// Implements the Pareto distribution
+/// F(x) = 1 - (scale / x)^shape
+/// It samples using the highly optimized Exponential Ziggurat transform.
 pub fn Pareto(comptime Precision: type) type {
     return struct {
         pub const Self = @This();
@@ -21,11 +19,11 @@ pub fn Pareto(comptime Precision: type) type {
         shape: Precision, // alpha
         scale: Precision, // x_m
         interface: PDist,
-        unif: Uniform(Precision),
+        exp: Exponential(Precision),
 
-        /// Uses Ziggurat
+        /// Uses Ziggurat with this trick P = x_m * e^(E/alpha) where E ~ exp(1)
         pub fn sample(self: *const Self, rng: Random) Precision {
-            return self.scale * std.math.pow(Precision, self.unif.sample(rng), -1.0 / self.shape);
+            return self.scale * std.math.exp(self.exp.sample(rng) / self.shape);
         }
 
         pub fn sampleImpl(dist: *const Distribution(Precision), rng: Random) Precision {
@@ -39,7 +37,7 @@ pub fn Pareto(comptime Precision: type) type {
             return .{
                 .shape = shape,
                 .scale = scale,
-                .unif = .init(0, 1, Interval.oc),
+                .exp = Exponential(Precision).init(1.0),
                 .interface = PDist{
                     .vtable = &.{ .sample = sampleImpl, .format = formatImpl },
                 },
