@@ -82,30 +82,5 @@ pub fn Exponential(comptime Precision: type) type {
         pub fn format(self: *const Self, writer: *Io.Writer) !void {
             try writer.print("Exp{{λ={d:.2}}}", .{self.rate});
         }
-
-        /// To parse the JSON into the UnionDistr, it's needed to ignore the
-        /// .interface method when parsing the json to create the union!
-        pub fn jsonParse(
-            gpa: Allocator,
-            source: anytype,
-            options: std.json.ParseOptions,
-        ) !Self {
-            const Params = struct {
-                rate: ?Precision = null,
-                mean: ?Precision = null,
-            };
-
-            const parsed = try std.json.innerParse(Params, gpa, source, options);
-
-            if (parsed.rate) |r| {
-                if (parsed.mean != null) return error.UnexpectedToken;
-
-                return init(r);
-            } else if (parsed.mean) |m| {
-                return initMean(m);
-            } else {
-                return error.MissingField;
-            }
-        }
     };
 }

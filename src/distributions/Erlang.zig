@@ -1,3 +1,4 @@
+/// This distribution is both unused and untested. careful.
 const std = @import("std");
 const Random = std.Random;
 const assert = std.debug.assert;
@@ -32,9 +33,7 @@ pub fn Erlang(comptime Precision: type) type {
                 .k = k,
                 .lambda = lambda,
                 .dimensions = dimensions,
-                .interface = Distribution(Precision){ 
-                    .vtable = &.{ .sample = sampleImpl } 
-                },
+                .interface = Distribution(Precision){ .vtable = &.{ .sample = sampleImpl } },
             };
         }
     };

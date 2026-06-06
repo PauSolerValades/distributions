@@ -49,28 +49,5 @@ pub fn Pareto(comptime Precision: type) type {
                 },
             };
         }
-
-        /// To parse the JSON into the UnionDistr, it's needed to ignore the
-        /// .interface method when parsing the json to create the union!
-        pub fn jsonParse(
-            gpa: Allocator,
-            source: anytype,
-            options: std.json.ParseOptions,
-        ) !Self {
-            const Params = struct { shape: Precision, scale: Precision };
-
-            const parsed = try std.json.innerParse(Params, gpa, source, options);
-
-            return init(parsed.shape, parsed.scale);
-        }
-
-        fn formatImpl(dist: *const PDist, writer: *Io.Writer) !void {
-            const self: *const Self = @alignCast(@fieldParentPtr("interface", dist));
-            try self.format(writer);
-        }
-
-        pub fn format(self: *const Self, writer: *Io.Writer) !void {
-            try writer.print("Pareto{{alpha={d:.2}, x_m={d:.2}}}", .{ self.shape, self.scale });
-        }
     };
 }

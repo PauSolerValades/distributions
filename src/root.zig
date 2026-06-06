@@ -25,8 +25,6 @@ test "smoke: all distributions compile and sample" {
     var prng = std.Random.DefaultPrng.init(seed);
     const rng = prng.random();
 
-    // ── f32 ──────────────────────────────────────────────
-
     // Exponential
     {
         const exp = Exponential(f32).init(2.0);
@@ -110,8 +108,6 @@ test "smoke: all distributions compile and sample" {
         defer ecdf.deinit(testing.allocator);
         try testing.expectEqual(@as(f64, 1.0), ecdf.sample(rng));
     }
-
-    // ── f64 ──────────────────────────────────────────────
 
     // Exponential f64
     {

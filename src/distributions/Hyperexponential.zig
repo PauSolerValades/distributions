@@ -1,3 +1,4 @@
+/// This distribution is unused and untested. Carefull
 const std = @import("std");
 const Random = std.Random;
 const assert = std.debug.assert;
@@ -22,7 +23,7 @@ pub fn HyperExponential(comptime Precision: type) type {
                     return (1.0 / self.rates[i]) * (-@log(u));
                 }
             }
-            
+
             // Fallback
             const u = rng.float(Precision);
             return (1.0 / self.rates[self.rates.len - 1]) * (-@log(u));
@@ -38,9 +39,7 @@ pub fn HyperExponential(comptime Precision: type) type {
             return .{
                 .probs = probs,
                 .rates = rates,
-                .interface = Distribution(Precision){ 
-                    .vtable = &.{ .sample = sampleImpl } 
-                },
+                .interface = Distribution(Precision){ .vtable = &.{ .sample = sampleImpl } },
             };
         }
     };

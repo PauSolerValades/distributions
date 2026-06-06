@@ -1,3 +1,4 @@
+/// This distribution is unused and untested. Careful.
 const std = @import("std");
 const Random = std.Random;
 
@@ -28,9 +29,7 @@ pub fn HypoExponential(comptime Precision: type) type {
             return .{
                 .rates = rates,
                 .dimensions = dimensions,
-                .interface = Distribution(Precision){ 
-                    .vtable = &.{ .sample = sampleImpl } 
-                },
+                .interface = Distribution(Precision){ .vtable = &.{ .sample = sampleImpl } },
             };
         }
     };
