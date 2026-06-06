@@ -49,5 +49,14 @@ pub fn Pareto(comptime Precision: type) type {
                 },
             };
         }
+
+        fn formatImpl(dist: *const PDist, writer: *Io.Writer) !void {
+            const self: *const Self = @alignCast(@fieldParentPtr("interface", dist));
+            try self.format(writer);
+        }
+
+        pub fn format(self: *const Self, writer: *Io.Writer) !void {
+            try writer.print("Pareto{{alpha={d:.2}, x_m={d:.2}}}", .{ self.shape, self.scale });
+        }
     };
 }

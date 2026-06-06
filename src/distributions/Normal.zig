@@ -111,5 +111,14 @@ pub fn Normal(comptime Precision: type) type {
         pub fn cdf(self: *const Self, x: Precision) Precision {
             return normCdf(self.mean, self.variance, x);
         }
+
+        fn formatImpl(dist: *const PDist, writer: *Io.Writer) !void {
+            const self: *const Self = @alignCast(@fieldParentPtr("interface", dist));
+            try self.format(writer);
+        }
+
+        pub fn format(self: *const Self, writer: *Io.Writer) !void {
+            try writer.print("Normal{{μ={d:.2}, σ²={d:.2}}}", .{ self.mean, self.variance });
+        }
     };
 }
