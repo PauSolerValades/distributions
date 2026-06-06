@@ -1,23 +1,24 @@
-# Distribution
+# Distributions
 
-Zig library to sample from statistical distributions. Born out of my need of quick configs while building a Discrete Event Simulation.
+Zig library to sample from distributions, trying to be as performant as possible.
 
 Distributions implemented:
-- Continuous: Exponential, Uniform, Normal. (also Hyperexponential, Hypoexponential and Erlang, but not tested)
-- Discrete: Categorical, Empirical Cumulative Distribution.
+- Continuous: Exponential, Uniform, Normal, Pareto. 
+- Discrete: Categorical, Empirical Cumulative Distribution, Constant.
+
+If you need a distribution which is not implemented just let me know and I'll help on getting the implementation going :)
 
 ## Features
 * **Generic Precision**: Support for Single (f32) and Double (f64) precision at comptime for Continuous Distributions and probability computations in Discrete Distributions.
-* **Arbitrary Data Types**: Discrete distributions (like Categorical and ECDF) can sample and return any Zig type such as ints, floats, enums and bools.
+* **Arbitrary Data Types**: Discrete distributions (like Categorical and ECDF) can sample and return Zig type such as ints, floats, enums and bools.
 * **Dual Polymorphism**: two approaches of polymorphism, choose from:
     * **Tagged Unions:** Zero-overhead, compiler-inlined dispatch for closed sets of distributions.
     * **Intrusive Interface:** Fully dynamic, user-extensible dispatch for runtime flexibility.
-* **Immutable Zero-Allocations post-init:** Distributions just require allocations (_if they require it_ as use of arrays) on init, then the object is immutable and just to be sampled with.
-* **pdf $f(x)$ and cdf $F(x)$**: Implemented in Exponential and Normal distributions.
-* **Goodness-of-Fit**: Kolmogorov-Smirnov test for both continuous distributions.
+* **Immutable Zero-Allocations post-init:** Distributions just require allocations (_if they require it_ as use of arrays) on init, then the object is immutable and just to be sampled from.
+* **Goodness-of-Fit**: Kolmogorov-Smirnov test implemented to test continuous distributions.
 
-## Tutorial 
-_[See `src/main.zig` for the code]_
+## Getting Started 
+[_See `src/main.zig` for the code_]
 
 Create a distribution as the following:
 
@@ -43,8 +44,7 @@ const dexp: *Dist = &exp.interface; //access the interface
 const e: f32 = dexp.sample(rng);
 ```
 
-
-You can generate numbers without using the `sample` from the interface like this if you want to save a line. This is useful if you just want a quick random number.
+You can generate numbers without using the `sample` from the interface like this if you want to save a line if you do not need polymorphism.
 
 ```zig
 const ex: f32 = exp.sample(rng);
@@ -68,18 +68,26 @@ In the `examples` folders there are 5 examples showcasing features:
 
 ## Design
 
-This library emerged to solve a very specific need: change the configuration of a Discrete Event Simulation without recompiling the code, that is, to provide dynamic runtime dispatch. I've landed (inspired by Writergate) to use an Intrusive Interface (`Distribution.zig`) with a vtable. That means, every distribution struct can be instantiated standalone, or with the pointer to a `Distribution`. This makes the Distribution Type generic at runtime, at the cost of dereferencing the vtable function pointer everytime sample its called.
+The idea on this design was to offer the maximum amount of flexibility possible. That's the rationale behind having the option of a complete runtime know distribution through a VTable such as `Distribution` ---I believe this is an Intrusive Interface pattern/design--- and at the same time the function to sample is accessible without the need to generalize not needed to sample from there. Of course, depends on the usage you need: a `Distribution` is generic and allows to runtime dynamic dispatch the results, while not using it allows the compiler to save a dereference to find the concrete implementation of the `sample` function.
 
-To make it generic from a file, I also needed to implement Polymorphism from a Tagged Union, to be able to write a JSON config file. As discrete and continuous distributions are different, two unions are provided: `ContinousDistribution` and `DiscreteDistribution`. Every distribution that can be loaded from a JSON needs a custom load JSON method to avoid writing the `interface` parameter on the JSON.
+Reinforcing the fexibility mantra, we have also another polymorphism approach: a `switch`, which is what `ContinuousDistribution` and `DiscreteDistribution` use.
 
-**Virtual Functions: what to have**
 
-My OOP instincts told me that the VTable should contain all the functions to provide always dynamic runtime dispatch. Fortunately, my gut told me it was a bad idea. To implement `cdf` for the Kolmogorov-Smirnov test I opted - as it will never be needed at runtime - to use `anytype` for the distribution parameter. All the reasoning was that I do not need that on my DES, and it just cluttered the design a lot. By using `anytype` the compiler enforces at compile time that the passed struct implements a `cdf` method, giving us complete type safety without the overhead of a VTable.
+**Virtual Functions and Bloating**
 
-To implement other functions can be for sure interesting, but until not needed I am not going to do it! This is just a quick tangent to arrive to my destination better.
+As the implementation grew, I saw myself implementing a very extensive VTable, with `pdf`, `cdf` and `inversecdf` as if this was a general puropose statistics library, both for the implementation of the Ziggurat algorithm and the Kolmogorov-Smirnov testing. For now, I want to keep this library focused on random sampling, and all the extra methods some distributions have won't have to be added in the VTable. The only trade-off this needed was to declare the argument `cdf` in `ksTestCont` as an `anytype` instead of a function pointer.
 
-## TODO
-1. `Distribution(Precision)` -> `Distribution(Precision, Sample)` to allow generalization of the second data type.
-2. Related to 1, this involves changing all the structure and comparisons of both `Categorical` and `ECDF` to the `utils.zig` function. Needed to implement both
-3. Change constant from Continuous to discrete, as it is really discrete.
-4. Finish the CDF of empirical distributions.
+
+## Sampling Algorithms
+
+The sampling algorithms used depend on the distribution implemented.
+
+Continuous Distributions:
+- Normal: ziggurat algorithm, and marsaglia (i think?) on case zero.
+- Exponential: Ziggurat algorithm, and the inverse method for case zero.
+- Pareto: we use the fact that P = x_m * e^(E/alpha) where E ~ exp(1), so it's ziggurat with some added cost due to the transformation.
+
+Discrete Distribution:
+- Empirical Cumulative: sorts and counts the numbers, and stores that to sample from it.
+- Categorical: naive algorithm. There is to my knowledge some far better algorithms.
+
