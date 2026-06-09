@@ -10,11 +10,16 @@ const Distribution = @import("../Distribution.zig").Distribution;
 /// $ P(X = i) = p_i
 pub fn Categorical(comptime Precision: type, comptime DataType: type) type {
     const weightsInfo = @typeInfo(Precision);
+    const dataInfo = @typeInfo(DataType);
 
     if (weightsInfo != .float) @compileError("Weights must be a floating point type");
 
+    if (dataInfo != .int and dataInfo != .float and dataInfo != .pointer and dataInfo != .@"enum" and dataInfo != .array) {
+        @compileError("DataType must be int, float, pointer, enum, or array");
+    }
+
     return struct {
-        const Self = @This(); // = Uniform(Precision)
+        const Self = @This();
         const PDist: type = Distribution(DataType);
 
         weights: []const Precision,
@@ -67,12 +72,30 @@ pub fn Categorical(comptime Precision: type, comptime DataType: type) type {
 
         // Example: Categorical( (1, 0.1, 0.1), (2, 0.1, 0.2), (3, 0.1, 0.3) )
         pub fn format(self: *const Self, writer: *Io.Writer) !void {
+            const datatype_info = @typeInfo(DataType);
             try writer.writeAll("Categorical{{ ");
+
             for (0..self.weights.len - 1) |i| {
-                try writer.print("({d:.2}, {d:.2}, {d:.2}) ", .{ self.data[i], self.weights[i], self.acc[i] });
+                switch (datatype_info) {
+                    .pointer, .@"enum", .array => {
+                        try writer.print("({s}, {d:.2}, {d:.2}) ", .{ self.data[i], self.weights[i], self.acc[i] });
+                    },
+                    .int, .float => {
+                        try writer.print("({d:.2}, {d:.2}, {d:.2}) ", .{ self.data[i], self.weights[i], self.acc[i] });
+                    },
+                    else => return error.unsupported_type,
+                }
             }
             const last_i = self.data.len - 1;
-            try writer.print("({d:.2}, {d:.2}, {d:.2}) }}", .{ self.data[last_i], self.weights[last_i], self.acc[last_i] });
+            switch (datatype_info) {
+                .pointer, .@"enum", .array => {
+                    try writer.print("({s}, {d:.2}, {d:.2}) }}", .{ self.data[last_i], self.weights[last_i], self.acc[last_i] });
+                },
+                .int, .float => {
+                    try writer.print("({d:.2}, {d:.2}, {d:.2}) }}", .{ self.data[last_i], self.weights[last_i], self.acc[last_i] });
+                },
+                else => return error.unsupported_type,
+            }
         }
     };
 }
