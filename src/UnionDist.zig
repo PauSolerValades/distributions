@@ -56,6 +56,7 @@ pub fn DiscreteDistribution(comptime Precision: type, comptime DataType: type) t
 
         constant: Constant(DataType),
         categorical: Categorical(Precision, DataType),
+        uniform: DiscreteUniform(DataType),
         ecdf: ECDF(Precision, DataType),
 
         pub fn sample(self: *const Self, rng: Random) DataType {
@@ -68,7 +69,7 @@ pub fn DiscreteDistribution(comptime Precision: type, comptime DataType: type) t
             switch (self.*) {
                 // generates this:
                 // .constant => |*c| return c.sample(rng),
-                // .exponential => |*exp| return exp.sample(rng),
+                // .categorical => |*exp| return cat.sample(rng),
                 // .uniform => |*unif| return unif.sample(rng),
                 // ...
                 inline else => |*dist| try dist.format(writer),
