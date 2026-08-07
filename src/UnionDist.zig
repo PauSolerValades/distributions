@@ -22,6 +22,7 @@ pub fn ContinuousDistribution(comptime Precision: type) type {
         normal: Normal(Precision),
         pareto: Pareto(Precision),
         uniform: Uniform(Precision),
+        ecdf: ECDF(Precision, Precision),
 
         pub fn sample(self: *const Self, rng: Random) Precision {
             switch (self.*) {

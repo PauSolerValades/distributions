@@ -122,22 +122,25 @@ pub fn ECDF(comptime Precision: type, comptime DataType: type) type {
             return self.sample(rng);
         }
 
-        pub fn cdf(self: *const Self, x: Precision) Precision {
+        /// P(X <= x): binary search over the sorted values, return the cumsum there.
+        pub fn cdf(self: *const Self, x: DataType) Precision {
+            const values = self.bins.items(.value);
+
+            // count bins with value <= x
             var lower: usize = 0;
-            var upper: usize = self.bins.len;
+            var upper: usize = values.len;
 
             while (lower < upper) {
                 const i = lower + @divFloor(upper - lower, 2);
-                const p = self.bins.items(.cump)[i];
-
-                if (x <= p) {
-                    upper = i;
-                } else if (x > p) {
+                if (values[i] <= x) {
                     lower = i + 1;
+                } else {
+                    upper = i;
                 }
             }
 
-            return self.bins.items(.cump)[lower];
+            if (lower == 0) return 0;
+            return self.bins.items(.cump)[lower - 1];
         }
 
         fn formatImpl(dist: *const PDist, writer: *Io.Writer) !void {
@@ -173,4 +176,9 @@ test "test" {
 
     try expectEqualSlices(u32, ecdf.bins.items(.value), &values);
     try expectEqualSlices(f32, ecdf.bins.items(.cump), &cump);
+
+    try std.testing.expectEqual(0.25, ecdf.cdf(0));
+    try std.testing.expectEqual(0.5, ecdf.cdf(1));
+    try std.testing.expectEqual(1.0, ecdf.cdf(3));
+    try std.testing.expectEqual(1.0, ecdf.cdf(999)); // above max
 }
