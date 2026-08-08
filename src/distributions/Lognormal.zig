@@ -49,10 +49,10 @@ pub fn Lognormal(comptime Precision: type) type {
         pub fn format(self: *const Self, writer: *Io.Writer) !void {
             try writer.print("Lognormal{{μ={d:.2}, σ²={d:.2}}}", .{ self.mean, self.variance });
         }
-        // this needs of that weird funciton. For the normal i gave an approximation, but for this
-        // i dont want to look up one
         pub fn cdf(self: *const Self, x: Precision) Precision {
-            return std.math.exp(self.norm.cdf(x));
+            if (x <= 0) return 0;
+            // X ~ LogNormal(μ, σ²) ⟺ ln X ~ Normal(μ, σ²), so F(x) = Φ((ln x − μ)/σ)
+            return self.norm.cdf(@log(x));
         }
     };
 }
