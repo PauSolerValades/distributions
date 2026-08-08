@@ -9,19 +9,17 @@ const Pareto = dist.Pareto;
 const Norm = dist.Normal;
 const Unif = dist.Uniform;
 const Interval = dist.Interval;
+const Lognormal = dist.Lognormal;
 
 pub fn main(init: std.process.Init) !void {
-
     var stdout_file_writer: std.Io.File.Writer = .init(.stdout(), init.io, &.{});
     const stdout_writer = &stdout_file_writer.interface;
 
-    var prng = std.Random.DefaultPrng.init(
-        blk: {
-            var os_seed: u64 = undefined;
-            init.io.random(std.mem.asBytes(&os_seed));
-            break :blk os_seed;
-        }
-    );
+    var prng = std.Random.DefaultPrng.init(blk: {
+        var os_seed: u64 = undefined;
+        init.io.random(std.mem.asBytes(&os_seed));
+        break :blk os_seed;
+    });
     const rng = prng.random();
 
     const alpha_99 = 1.95;
@@ -47,7 +45,7 @@ pub fn main(init: std.process.Init) !void {
     }
 
     const norm: Norm(f64) = .init(0.0, 1.0);
-    const dnorm = &norm.interface; 
+    const dnorm = &norm.interface;
 
     var sample_norm: [n_samples]f64 = undefined;
     dnorm.sampleBuffer(&sample_norm, rng);
@@ -95,7 +93,24 @@ pub fn main(init: std.process.Init) !void {
     } else {
         try stdout_writer.print("  [PASS] Null not rejected. Sampler is accurate. D={d:.4}\n", .{Dn_pareto});
     }
+
+    const lognorm: Lognormal(f64) = Lognormal(f64).init(0, 1);
+    const dlognorm = &lognorm.interface;
+
+    var sample_lognorm: [n_samples]f64 = undefined;
+    dlognorm.sampleBuffer(&sample_lognorm, rng);
+
+    const Dn_lognorm = try ksTest(init.gpa, &sample_lognorm, &lognorm);
+    const reject_lognorm = Dn_lognorm > critical_value;
+
+    try stdout_writer.print("\nLognormal(0, 1):\n", .{});
+    if (reject_lognorm) {
+        try stdout_writer.print("  [FAIL] Null rejected. Sample does NOT follow distribution. D={d:.4}\n", .{Dn_lognorm});
+    } else {
+        try stdout_writer.print("  [PASS] Null not rejected. Sampler is accurate. D={d:.4}\n", .{Dn_lognorm});
+    }
 }
+
 /// Kolmogorov-Smirnov test statistic against the distribution's cdf. Works for int and float samples.
 pub fn ksTest(gpa: std.mem.Allocator, sample: anytype, d: anytype) !f64 {
     const T = std.meta.Elem(@TypeOf(sample));
@@ -105,7 +120,7 @@ pub fn ksTest(gpa: std.mem.Allocator, sample: anytype, d: anytype) !f64 {
     const values = ecdf.bins.items(.value);
     const cump = ecdf.bins.items(.cump);
     const num_distinct_samples = ecdf.bins.len;
-    
+
     var max_diff: f64 = 0;
     var p_prev: f64 = 0.0;
 
@@ -116,7 +131,7 @@ pub fn ksTest(gpa: std.mem.Allocator, sample: anytype, d: anytype) !f64 {
             else => unreachable,
         };
         const p = cump[i];
-        
+
         const pi = d.cdf(fei);
 
         const diff_top = @abs(p - pi);
@@ -125,6 +140,6 @@ pub fn ksTest(gpa: std.mem.Allocator, sample: anytype, d: anytype) !f64 {
         max_diff = @max(max_diff, @max(diff_top, diff_bottom));
         p_prev = p;
     }
-    
+
     return max_diff;
 }

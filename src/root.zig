@@ -9,10 +9,11 @@ pub const Normal = @import("distributions/Normal.zig").Normal;
 pub const Pareto = @import("distributions/Pareto.zig").Pareto;
 pub const Uniform = @import("distributions/Uniform.zig").Uniform;
 pub const Interval = @import("distributions/Uniform.zig").Interval;
-pub const DiscreteUniform = @import("Distributions/DiscreteUniform.zig").DiscreteUniform;
+pub const Lognormal = @import("distributions/Lognormal.zig").Lognormal;
 
 pub const Categorical = @import("distributions/Categorical.zig").Categorical;
 pub const ECDF = @import("distributions/ECDF.zig").ECDF;
+pub const DiscreteUniform = @import("Distributions/DiscreteUniform.zig").DiscreteUniform;
 
 const unions = @import("UnionDist.zig");
 
