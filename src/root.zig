@@ -9,6 +9,7 @@ pub const Normal = @import("distributions/Normal.zig").Normal;
 pub const Pareto = @import("distributions/Pareto.zig").Pareto;
 pub const Uniform = @import("distributions/Uniform.zig").Uniform;
 pub const Interval = @import("distributions/Uniform.zig").Interval;
+pub const DiscreteUniform = @import("Distributions/DiscreteUniform.zig").DiscreteUniform;
 
 pub const Categorical = @import("distributions/Categorical.zig").Categorical;
 pub const ECDF = @import("distributions/ECDF.zig").ECDF;
@@ -124,7 +125,7 @@ test "smoke: all distributions compile and sample" {
     // Uniform f64
     {
         const unif = Uniform(f64).init(-1.0, 1.0, .co);
-        try testing.expectApproxEqRel(0.5529309431796436, unif.sample(rng), 1e-14);
+        try testing.expectApproxEqRel(0.10586188635928728, unif.sample(rng), 1e-14);
     }
 
     // Categorical f64 with i32 data

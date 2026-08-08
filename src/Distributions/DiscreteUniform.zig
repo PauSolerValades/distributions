@@ -49,28 +49,19 @@ pub fn DiscreteUniform(comptime DataType: type) type {
             return self.sample(rng);
         }
 
-        pub fn unifCdf(min: Precision, max: Precision, interval: Interval, x: Precision) Precision {
-            const CompareOperator = std.math.CompareOperator;
-            const lower: CompareOperator = switch (interval) {
-                .oo, .oc => .lt,
-                .co, .cc => .lte,
+        /// Discrete cdf: F(x) = P(X <= x) over the integers in the interval.
+        pub fn cdf(self: *const Self, x: f64) f64 {
+            const lo: f64 = switch (self.interval) {
+                .oo, .oc => @floatFromInt(self.min + 1),
+                .co, .cc => @floatFromInt(self.min),
             };
-            const upper: CompareOperator = switch (interval) {
-                .oc, .cc => .gt,
-                .co, .oo => .gte,
+            const hi: f64 = switch (self.interval) {
+                .oo, .co => @floatFromInt(self.max - 1),
+                .oc, .cc => @floatFromInt(self.max),
             };
-
-            if (std.math.order(x, min).compare(lower)) {
-                return 0.0;
-            } else if (std.math.order(x, max).compare(upper)) {
-                return 1.0;
-            } else {
-                return (x - min) / (max - min);
-            }
-        }
-
-        pub fn cdf(self: *const Self, x: Precision) Precision {
-            return unifCdf(self.min, self.max, self.Interval, x);
+            if (x < lo) return 0.0;
+            if (x >= hi) return 1.0;
+            return (@floor(x) - lo + 1.0) / (hi - lo + 1.0);
         }
 
         fn formatImpl(dist: *const PDist, writer: *Io.Writer) !void {

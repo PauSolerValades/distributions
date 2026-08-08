@@ -7,6 +7,8 @@ const ECDF = dist.ECDF;
 const Exp = dist.Exponential;
 const Pareto = dist.Pareto;
 const Norm = dist.Normal;
+const Unif = dist.Uniform;
+const Interval = dist.Interval;
 
 pub fn main(init: std.process.Init) !void {
 
@@ -34,7 +36,7 @@ pub fn main(init: std.process.Init) !void {
     var sample_exp: [n_samples]f64 = undefined;
     dexp.sampleBuffer(&sample_exp, rng);
 
-    const Dn_exp = try ksTestCont(init.gpa, &sample_exp, &exp);
+    const Dn_exp = try ksTest(init.gpa, &sample_exp, &exp);
     const reject_exp = Dn_exp > critical_value;
 
     try stdout_writer.print("Exponential Exp(1):\n", .{});
@@ -50,7 +52,7 @@ pub fn main(init: std.process.Init) !void {
     var sample_norm: [n_samples]f64 = undefined;
     dnorm.sampleBuffer(&sample_norm, rng);
 
-    const Dn_norm = try ksTestCont(init.gpa, &sample_norm, &norm);
+    const Dn_norm = try ksTest(init.gpa, &sample_norm, &norm);
     const reject_norm = Dn_norm > critical_value;
 
     try stdout_writer.print("\nNormal N(0, 1):\n", .{});
@@ -60,13 +62,31 @@ pub fn main(init: std.process.Init) !void {
         try stdout_writer.print("  [PASS] Null not rejected. Sampler is accurate. D={d:.4}\n", .{Dn_norm});
     }
 
+    try stdout_writer.print("\nUniform U(2, 5) (all intervals):\n", .{});
+    inline for (.{ Interval.co, Interval.oc, Interval.oo, Interval.cc }) |intvl| {
+        const unif: Unif(f64) = .init(2.0, 5.0, intvl);
+        const dunif = &unif.interface;
+
+        var sample_unif: [n_samples]f64 = undefined;
+        dunif.sampleBuffer(&sample_unif, rng);
+
+        const Dn_unif = try ksTest(init.gpa, &sample_unif, &unif);
+        const reject_unif = Dn_unif > critical_value;
+
+        if (reject_unif) {
+            try stdout_writer.print("  [FAIL] {s}: Null rejected. Sample does NOT follow distribution. D={d:.4}\n", .{ @tagName(intvl), Dn_unif });
+        } else {
+            try stdout_writer.print("  [PASS] {s}: Null not rejected. Sampler is accurate. D={d:.4}\n", .{ @tagName(intvl), Dn_unif });
+        }
+    }
+
     const pareto: Pareto(f64) = Pareto(f64).init(2.5, 1.0);
     const dpareto = &pareto.interface;
 
     var sample_pareto: [n_samples]f64 = undefined;
     dpareto.sampleBuffer(&sample_pareto, rng);
 
-    const Dn_pareto = try ksTestCont(init.gpa, &sample_pareto, &pareto);
+    const Dn_pareto = try ksTest(init.gpa, &sample_pareto, &pareto);
     const reject_pareto = Dn_pareto > critical_value;
 
     try stdout_writer.print("\nPareto(α=2.50, x_m=1.00):\n", .{});
@@ -76,9 +96,10 @@ pub fn main(init: std.process.Init) !void {
         try stdout_writer.print("  [PASS] Null not rejected. Sampler is accurate. D={d:.4}\n", .{Dn_pareto});
     }
 }
-/// Compute p-value with an \alpha=0.99 with a Kolmogorov-Smirnov test for continuous distributions
-pub fn ksTestCont(gpa: std.mem.Allocator, sample: []f64, d: anytype) !f64 {
-    const ecdf = try ECDF(f64, f64).init(gpa, sample);
+/// Kolmogorov-Smirnov test statistic against the distribution's cdf. Works for int and float samples.
+pub fn ksTest(gpa: std.mem.Allocator, sample: anytype, d: anytype) !f64 {
+    const T = std.meta.Elem(@TypeOf(sample));
+    const ecdf = try ECDF(f64, T).init(gpa, sample);
     defer ecdf.deinit(gpa);
 
     const values = ecdf.bins.items(.value);
@@ -89,7 +110,11 @@ pub fn ksTestCont(gpa: std.mem.Allocator, sample: []f64, d: anytype) !f64 {
     var p_prev: f64 = 0.0;
 
     for (0..num_distinct_samples) |i| {
-        const fei = values[i]; 
+        const fei: f64 = switch (@typeInfo(T)) {
+            .int => @floatFromInt(values[i]),
+            .float => @floatCast(values[i]),
+            else => unreachable,
+        };
         const p = cump[i];
         
         const pi = d.cdf(fei);

@@ -36,14 +36,14 @@ pub fn Uniform(comptime Precision: type) type {
             switch (self.interval) {
                 // standard case
                 .co => return self.min + scale * rng.float(Precision),
-                .oc => return scale * (1 - rng.float(Precision)),
+                .oc => return self.min + scale * (1 - rng.float(Precision)),
                 .oo => {
                     var u = rng.float(Precision);
                     // this will happen not very often (1/9mill in f64?), a while does not seem that bad?
                     while (u == 0.0) {
                         u = rng.float(Precision);
                     }
-                    return scale * u;
+                    return self.min + scale * u;
                 },
                 .cc => {
                     const inf = std.math.inf(Precision);
