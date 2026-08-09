@@ -11,6 +11,7 @@ const Unif = dist.Uniform;
 const Interval = dist.Interval;
 const Lognormal = dist.Lognormal;
 const Weibull = dist.Weibull;
+const Gamma = dist.Gamma;
 
 pub fn main(init: std.process.Init) !void {
     var stdout_file_writer: std.Io.File.Writer = .init(.stdout(), init.io, &.{});
@@ -125,6 +126,22 @@ pub fn main(init: std.process.Init) !void {
         try stdout_writer.print("  [FAIL] Null rejected. Sample does NOT follow distribution. D={d:.4}\n", .{Dn_weibull});
     } else {
         try stdout_writer.print("  [PASS] Null not rejected. Sampler is accurate. D={d:.4}\n", .{Dn_weibull});
+    }
+
+    const gamma: Gamma(f64) = Gamma(f64).init(2.0, 1.5);
+    const dgamma = &gamma.interface;
+
+    var sample_gamma: [n_samples]f64 = undefined;
+    dgamma.sampleBuffer(&sample_gamma, rng);
+
+    const Dn_gamma = try ksTest(init.gpa, &sample_gamma, &gamma);
+    const reject_gamma = Dn_gamma > critical_value;
+
+    try stdout_writer.print("\nGamma(α=2.00, θ=1.50):\n", .{});
+    if (reject_gamma) {
+        try stdout_writer.print("  [FAIL] Null rejected. Sample does NOT follow distribution. D={d:.4}\n", .{Dn_gamma});
+    } else {
+        try stdout_writer.print("  [PASS] Null not rejected. Sampler is accurate. D={d:.4}\n", .{Dn_gamma});
     }
 }
 

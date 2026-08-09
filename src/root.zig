@@ -11,6 +11,7 @@ pub const Uniform = @import("distributions/Uniform.zig").Uniform;
 pub const Interval = @import("distributions/Uniform.zig").Interval;
 pub const Lognormal = @import("distributions/Lognormal.zig").Lognormal;
 pub const Weibull = @import("distributions/Weibull.zig").Weibull;
+pub const Gamma = @import("distributions/Gamma.zig").Gamma;
 
 pub const Categorical = @import("distributions/Categorical.zig").Categorical;
 pub const ECDF = @import("distributions/ECDF.zig").ECDF;
@@ -155,5 +156,12 @@ test "smoke: all distributions compile and sample" {
         try testing.expectApproxEqRel(0.6321205588285577, wb.cdf(1.0), 1e-14);
     }
 
-    // TODO: add gamma
+    // Gamma f64
+    {
+        const gm = Gamma(f64).init(2.0, 1.5);
+        try testing.expect(gm.sample(rng) > 0);
+        try testing.expect(gm.interface.sample(rng) > 0);
+        // F(k*θ) ≈ 0.59 for Gamma(k=2, θ=1.5); exact: P(2, 2) = 1 − 3e^(−2)
+        try testing.expectApproxEqRel(1 - 3 * @exp(-2.0), gm.cdf(3.0), 1e-12);
+    }
 }
