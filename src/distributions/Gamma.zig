@@ -5,6 +5,7 @@ const math = std.math;
 const assert = std.debug.assert;
 
 const Distribution = @import("../Distribution.zig").Distribution;
+const Normal = @import("Normal.zig").Normal;
 
 /// Implements the gamma distribution with shape $k$ and scale $theta$.
 /// $ f(x) = x^(k-1) * e^(-x/theta) / (Gamma(k) * theta^k) $
@@ -17,6 +18,7 @@ pub fn Gamma(comptime Precision: type) type {
         shape: Precision, // k
         scale: Precision, // theta
         interface: PDist,
+        norm: Normal(Precision),
 
         pub fn init(shape: Precision, scale: Precision) @This() {
             assert(shape > 0 and !math.isNan(shape) and !math.isInf(shape));
@@ -24,7 +26,7 @@ pub fn Gamma(comptime Precision: type) type {
             return .{ .shape = shape, .scale = scale, .interface = PDist{ .vtable = &.{
                 .sample = sampleImpl,
                 .format = formatImpl,
-            } } };
+            } }, .norm = Normal(Precision).init(0, 1) };
         }
 
         /// Marsaglia & Tsang; for shape < 1 boost to (shape + 1) and thin with u^(1/k)
@@ -38,7 +40,7 @@ pub fn Gamma(comptime Precision: type) type {
             var v: Precision = undefined;
 
             while (true) {
-                x = rng.floatNorm(Precision);
+                x = self.norm.sample(rng);
                 v = 1 + c * x;
                 if (v <= 0) continue;
 

@@ -77,8 +77,11 @@ pub fn Categorical(comptime Precision: type, comptime DataType: type) type {
 
             for (0..self.weights.len - 1) |i| {
                 switch (datatype_info) {
-                    .pointer, .@"enum", .array => {
+                    .pointer, .array => {
                         try writer.print("({s}, {d:.2}, {d:.2}) ", .{ self.data[i], self.weights[i], self.acc[i] });
+                    },
+                    .@"enum" => {
+                        try writer.print("({t}, {d:.2}, {d:.2}) ", .{ self.data[i], self.weights[i], self.acc[i] });
                     },
                     .int, .float => {
                         try writer.print("({d:.2}, {d:.2}, {d:.2}) ", .{ self.data[i], self.weights[i], self.acc[i] });
@@ -88,8 +91,11 @@ pub fn Categorical(comptime Precision: type, comptime DataType: type) type {
             }
             const last_i = self.data.len - 1;
             switch (datatype_info) {
-                .pointer, .@"enum", .array => {
+                .pointer, .array => {
                     try writer.print("({s}, {d:.2}, {d:.2}) }}", .{ self.data[last_i], self.weights[last_i], self.acc[last_i] });
+                },
+                .@"enum" => {
+                    try writer.print("({t}, {d:.2}, {d:.2}) }}", .{ self.data[last_i], self.weights[last_i], self.acc[last_i] });
                 },
                 .int, .float => {
                     try writer.print("({d:.2}, {d:.2}, {d:.2}) }}", .{ self.data[last_i], self.weights[last_i], self.acc[last_i] });

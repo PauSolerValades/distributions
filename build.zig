@@ -29,7 +29,7 @@ pub fn build(b: *std.Build) void {
 
     // TODO: just make this return a list of filenames
     const examples = [_][]const u8{
-        "union_json",
+        "intro",
         "continous_distribution",
         "discrete_distribution",
         "union",
