@@ -10,6 +10,7 @@ pub const Pareto = @import("distributions/Pareto.zig").Pareto;
 pub const Uniform = @import("distributions/Uniform.zig").Uniform;
 pub const Interval = @import("distributions/Uniform.zig").Interval;
 pub const Lognormal = @import("distributions/Lognormal.zig").Lognormal;
+pub const Weibull = @import("distributions/Weibull.zig").Weibull;
 
 pub const Categorical = @import("distributions/Categorical.zig").Categorical;
 pub const ECDF = @import("distributions/ECDF.zig").ECDF;
@@ -137,4 +138,22 @@ test "smoke: all distributions compile and sample" {
         defer cat.deinit(testing.allocator);
         try testing.expectEqual(@as(i32, 0), cat.sample(rng));
     }
+
+    // Lognormal f64
+    {
+        const ln = Lognormal(f64).init(0.0, 1.0);
+        try testing.expectApproxEqRel(2.5798756313626687, ln.sample(rng), 1e-14);
+        // median is e^μ, so F(1) = 0.5 for LogNormal(0, 1)
+        try testing.expectApproxEqRel(0.5, ln.cdf(1.0), 1e-6);
+    }
+
+    // Weibull f64
+    {
+        const wb = Weibull(f64).init(1.0, 2.0);
+        try testing.expectApproxEqRel(0.6982549119369307, wb.sample(rng), 1e-14);
+        // F(1) = 1 − e^(−1) for Weibull(λ=1, k=2)
+        try testing.expectApproxEqRel(0.6321205588285577, wb.cdf(1.0), 1e-14);
+    }
+
+    // TODO: add gamma
 }

@@ -8,6 +8,7 @@ const Normal = @import("distributions/Normal.zig").Normal;
 const Pareto = @import("distributions/Pareto.zig").Pareto;
 const Uniform = @import("distributions/Uniform.zig").Uniform;
 const Lognormal = @import("distributions/Lognormal.zig").Lognormal;
+const Weibull = @import("distributions/Weibull.zig").Weibull;
 
 const DiscreteUniform = @import("Distributions/DiscreteUniform.zig").DiscreteUniform;
 const Categorical = @import("distributions/Categorical.zig").Categorical;
@@ -26,6 +27,7 @@ pub fn ContinuousDistribution(comptime Precision: type) type {
         uniform: Uniform(Precision),
         ecdf: ECDF(Precision, Precision),
         lognorm: Lognormal(Precision),
+        weibull: Weibull(Precision),
 
         pub fn sample(self: *const Self, rng: Random) Precision {
             switch (self.*) {

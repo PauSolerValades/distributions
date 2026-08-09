@@ -10,6 +10,7 @@ const Norm = dist.Normal;
 const Unif = dist.Uniform;
 const Interval = dist.Interval;
 const Lognormal = dist.Lognormal;
+const Weibull = dist.Weibull;
 
 pub fn main(init: std.process.Init) !void {
     var stdout_file_writer: std.Io.File.Writer = .init(.stdout(), init.io, &.{});
@@ -108,6 +109,22 @@ pub fn main(init: std.process.Init) !void {
         try stdout_writer.print("  [FAIL] Null rejected. Sample does NOT follow distribution. D={d:.4}\n", .{Dn_lognorm});
     } else {
         try stdout_writer.print("  [PASS] Null not rejected. Sampler is accurate. D={d:.4}\n", .{Dn_lognorm});
+    }
+
+    const weibull: Weibull(f64) = Weibull(f64).init(1.0, 2.0);
+    const dweibull = &weibull.interface;
+
+    var sample_weibull: [n_samples]f64 = undefined;
+    dweibull.sampleBuffer(&sample_weibull, rng);
+
+    const Dn_weibull = try ksTest(init.gpa, &sample_weibull, &weibull);
+    const reject_weibull = Dn_weibull > critical_value;
+
+    try stdout_writer.print("\nWeibull(λ=1.00, k=2.00):\n", .{});
+    if (reject_weibull) {
+        try stdout_writer.print("  [FAIL] Null rejected. Sample does NOT follow distribution. D={d:.4}\n", .{Dn_weibull});
+    } else {
+        try stdout_writer.print("  [PASS] Null not rejected. Sampler is accurate. D={d:.4}\n", .{Dn_weibull});
     }
 }
 
