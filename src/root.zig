@@ -13,6 +13,7 @@ pub const Interval = @import("distributions/Uniform.zig").Interval;
 pub const Lognormal = @import("distributions/Lognormal.zig").Lognormal;
 pub const Weibull = @import("distributions/Weibull.zig").Weibull;
 pub const Gamma = @import("distributions/Gamma.zig").Gamma;
+pub const Mixture = @import("distributions/Mixture.zig").Mixture;
 
 pub const Categorical = @import("distributions/Categorical.zig").Categorical;
 pub const ECDF = @import("distributions/ECDF.zig").ECDF;
@@ -25,6 +26,10 @@ pub const DiscreteDistribution = unions.DiscreteDistribution;
 pub const NonNegativeContinuousDistribution = unions.NonNegativeContinuousDistribution;
 
 const testing = std.testing;
+
+test "test" {
+    std.testing.refAllDecls(@This());
+}
 
 test "smoke: all distributions compile and sample" {
     const seed: u64 = 0xDEAD_BEEF;
