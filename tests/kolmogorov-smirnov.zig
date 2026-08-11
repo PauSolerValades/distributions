@@ -81,7 +81,7 @@ pub fn main(init: std.process.Init) !void {
         }
     }
 
-    const pareto: Pareto(f64) = Pareto(f64).init(2.5, 1.0);
+    const pareto: Pareto(f64) = Pareto(f64).init(1.0, 2.5);
     const dpareto = &pareto.interface;
 
     var sample_pareto: [n_samples]f64 = undefined;

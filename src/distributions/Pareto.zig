@@ -37,7 +37,7 @@ pub fn Pareto(comptime Precision: type) type {
             return self.sample(rng);
         }
 
-        pub fn init(shape: Precision, scale: Precision) @This() {
+        pub fn init(scale: Precision, shape: Precision) @This() {
             assert(shape >= 0);
             assert(scale >= 0);
             return .{
@@ -56,7 +56,7 @@ pub fn Pareto(comptime Precision: type) type {
         }
 
         pub fn format(self: *const Self, writer: *Io.Writer) !void {
-            try writer.print("Pareto{{alpha={d:.2}, x_m={d:.2}}}", .{ self.shape, self.scale });
+            try writer.print("Pareto{{α={d:.2}, x_m={d:.2}}}", .{ self.shape, self.scale });
         }
     };
 }
