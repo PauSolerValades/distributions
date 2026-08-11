@@ -12,6 +12,7 @@ const Interval = dist.Interval;
 const Lognormal = dist.Lognormal;
 const Weibull = dist.Weibull;
 const Gamma = dist.Gamma;
+const GeneralizedPareto = dist.GeneralizedPareto;
 
 pub fn main(init: std.process.Init) !void {
     var stdout_file_writer: std.Io.File.Writer = .init(.stdout(), init.io, &.{});
@@ -142,6 +143,22 @@ pub fn main(init: std.process.Init) !void {
         try stdout_writer.print("  [FAIL] Null rejected. Sample does NOT follow distribution. D={d:.4}\n", .{Dn_gamma});
     } else {
         try stdout_writer.print("  [PASS] Null not rejected. Sampler is accurate. D={d:.4}\n", .{Dn_gamma});
+    }
+
+    const gpd: GeneralizedPareto(f64) = GeneralizedPareto(f64).init(0.0, 1.0, 0.25);
+    const dgpd = &gpd.interface;
+
+    var sample_gpd: [n_samples]f64 = undefined;
+    dgpd.sampleBuffer(&sample_gpd, rng);
+
+    const Dn_gpd = try ksTest(init.gpa, &sample_gpd, &gpd);
+    const reject_gpd = Dn_gpd > critical_value;
+
+    try stdout_writer.print("\nGeneralizedPareto(μ=0.00, θ=1.00, α=0.25):\n", .{});
+    if (reject_gpd) {
+        try stdout_writer.print("  [FAIL] Null rejected. Sample does NOT follow distribution. D={d:.4}\n", .{Dn_gpd});
+    } else {
+        try stdout_writer.print("  [PASS] Null not rejected. Sampler is accurate. D={d:.4}\n", .{Dn_gpd});
     }
 }
 

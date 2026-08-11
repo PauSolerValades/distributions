@@ -7,6 +7,7 @@ pub const Constant = @import("distributions/Constant.zig").Constant;
 pub const Exponential = @import("distributions/Exponential.zig").Exponential;
 pub const Normal = @import("distributions/Normal.zig").Normal;
 pub const Pareto = @import("distributions/Pareto.zig").Pareto;
+pub const GeneralizedPareto = @import("distributions/GeneralizedPareto.zig").GeneralizedPareto;
 pub const Uniform = @import("distributions/Uniform.zig").Uniform;
 pub const Interval = @import("distributions/Uniform.zig").Interval;
 pub const Lognormal = @import("distributions/Lognormal.zig").Lognormal;
@@ -163,5 +164,26 @@ test "smoke: all distributions compile and sample" {
         try testing.expect(gm.interface.sample(rng) > 0);
         // F(k*θ) ≈ 0.59 for Gamma(k=2, θ=1.5); exact: P(2, 2) = 1 − 3e^(−2)
         try testing.expectApproxEqRel(1 - 3 * @exp(-2.0), gm.cdf(3.0), 1e-12);
+    }
+
+    // GeneralizedPareto f64
+    {
+        const gpd: GeneralizedPareto(f64) = .init(1.0, 2.0, 0.5);
+        try testing.expectApproxEqRel(1.722470832960247, gpd.sample(rng), 1e-14);
+        try testing.expectApproxEqRel(5.966858970139439, gpd.interface.sample(rng), 1e-14);
+        // F(3) = 1 − (1 + 0.5·(3−1)/2)^(−1/0.5) = 1 − 1.5⁻² for GPD(μ=1, θ=2, α=0.5)
+        try testing.expectApproxEqRel(1 - 1.0 / 2.25, gpd.cdf(3.0), 1e-14);
+    }
+
+    // GeneralizedPareto f64, bounded (α < 0)
+    {
+        const gpd: GeneralizedPareto(f64) = .init(0, 1, -1); // bounded!
+        try testing.expect(gpd.sample(rng) > 0);
+        try testing.expectEqual(@as(f64, 1), gpd.cdf(2.0)); // past upper endpoint μ − θ/α = 1
+    }
+
+    {
+        const p: Pareto(f64) = .init(1, 1);
+        try testing.expect(p.sample(rng) > 0);
     }
 }
