@@ -10,13 +10,8 @@ const Distribution = @import("../Distribution.zig").Distribution;
 /// $ P(X = i) = p_i
 pub fn Categorical(comptime Precision: type, comptime DataType: type) type {
     const weightsInfo = @typeInfo(Precision);
-    const dataInfo = @typeInfo(DataType);
 
     if (weightsInfo != .float) @compileError("Weights must be a floating point type");
-
-    if (dataInfo != .int and dataInfo != .float and dataInfo != .pointer and dataInfo != .@"enum" and dataInfo != .array) {
-        @compileError("DataType must be int, float, pointer, enum, or array");
-    }
 
     return struct {
         const Self = @This();
@@ -72,35 +67,27 @@ pub fn Categorical(comptime Precision: type, comptime DataType: type) type {
 
         // Example: Categorical( (1, 0.1, 0.1), (2, 0.1, 0.2), (3, 0.1, 0.3) )
         pub fn format(self: *const Self, writer: *Io.Writer) !void {
-            const datatype_info = @typeInfo(DataType);
             try writer.writeAll("Categorical{{ ");
 
-            for (0..self.weights.len - 1) |i| {
-                switch (datatype_info) {
-                    .pointer, .array => {
-                        try writer.print("({s}, {d:.2}, {d:.2}) ", .{ self.data[i], self.weights[i], self.acc[i] });
-                    },
-                    .@"enum" => {
-                        try writer.print("({t}, {d:.2}, {d:.2}) ", .{ self.data[i], self.weights[i], self.acc[i] });
-                    },
-                    .int, .float => {
-                        try writer.print("({d:.2}, {d:.2}, {d:.2}) ", .{ self.data[i], self.weights[i], self.acc[i] });
-                    },
-                    else => return error.unsupported_type,
-                }
+            for (0..self.weights.len) |i| {
+                try self.formatEntry(writer, i);
             }
-            const last_i = self.data.len - 1;
-            switch (datatype_info) {
-                .pointer, .array => {
-                    try writer.print("({s}, {d:.2}, {d:.2}) }}", .{ self.data[last_i], self.weights[last_i], self.acc[last_i] });
-                },
-                .@"enum" => {
-                    try writer.print("({t}, {d:.2}, {d:.2}) }}", .{ self.data[last_i], self.weights[last_i], self.acc[last_i] });
-                },
-                .int, .float => {
-                    try writer.print("({d:.2}, {d:.2}, {d:.2}) }}", .{ self.data[last_i], self.weights[last_i], self.acc[last_i] });
-                },
-                else => return error.unsupported_type,
+            try writer.writeAll("}}");
+        }
+
+        // Printing ladder: exact interface -> vtable, duck-typed format -> call it, otherwise index
+        fn formatEntry(self: *const Self, writer: *Io.Writer, i: usize) !void {
+            const duck_format = comptime switch (@typeInfo(DataType)) {
+                .@"struct", .@"union", .@"enum", .@"opaque" => @hasDecl(DataType, "format"),
+                else => false,
+            };
+            if (duck_format) {
+                try self.data[i].format(writer);
+            } else switch (@typeInfo(DataType)) {
+                .pointer, .array => try writer.print("({s}, {d:.2}, {d:.2}) ", .{ self.data[i], self.weights[i], self.acc[i] }),
+                .@"enum" => try writer.print("({t}, {d:.2}, {d:.2}) ", .{ self.data[i], self.weights[i], self.acc[i] }),
+                .int, .float => try writer.print("({d:.2}, {d:.2}, {d:.2}) ", .{ self.data[i], self.weights[i], self.acc[i] }),
+                else => try writer.print("(#{d}, {d:.2}, {d:.2}) ", .{ i, self.weights[i], self.acc[i] }),
             }
         }
     };
