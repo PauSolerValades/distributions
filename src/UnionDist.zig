@@ -86,3 +86,45 @@ pub fn DiscreteDistribution(comptime Precision: type, comptime DataType: type) t
         }
     };
 }
+
+// Distibutions that have an scritcly positive support.
+pub fn NonNegativeContinuousDistribution(comptime Precision: type) type {
+    return union(enum) {
+        const Self = @This();
+
+        constant: Constant(Precision),
+        lognorm: Lognormal(Precision),
+        weibull: Weibull(Precision),
+        gamma: Gamma(Precision),
+        pareto: Pareto(Precision),
+        gpareto: GeneralizedPareto(Precision),
+        exponential: Exponential(Precision),
+
+        pub fn sample(self: *const Self, rng: Random) Precision {
+            switch (self.*) {
+                .gpareto => {
+                    // for every value of alpha, mu must just be bigger than 0 and the
+                    // support will be negative. alpha < 0, will be also bounded
+                    std.debug.assert(self.location >= 0);
+                    return self.gpareto.sample(rng);
+                },
+                .constant => {
+                    std.debug.assert(self.value >= 0);
+                    return self.constant.sample(rng);
+                },
+                inline else => |*dist| return dist.sample(rng),
+            }
+        }
+
+        pub fn format(self: *const Self, writer: *Io.Writer) !void {
+            switch (self.*) {
+                // generates this:
+                // .constant => |*c| return c.sample(rng),
+                // .categorical => |*exp| return cat.sample(rng),
+                // .uniform => |*unif| return unif.sample(rng),
+                // ...
+                inline else => |*dist| try dist.format(writer),
+            }
+        }
+    };
+}
