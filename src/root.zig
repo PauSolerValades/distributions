@@ -17,7 +17,7 @@ pub const Mixture = @import("distributions/Mixture.zig").Mixture;
 
 pub const Categorical = @import("distributions/Categorical.zig").Categorical;
 pub const ECDF = @import("distributions/ECDF.zig").ECDF;
-pub const DiscreteUniform = @import("Distributions/DiscreteUniform.zig").DiscreteUniform;
+pub const DiscreteUniform = @import("distributions/DiscreteUniform.zig").DiscreteUniform;
 
 const unions = @import("UnionDist.zig");
 

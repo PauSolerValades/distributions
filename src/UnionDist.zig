@@ -12,7 +12,7 @@ const Weibull = @import("distributions/Weibull.zig").Weibull;
 const Gamma = @import("distributions/Gamma.zig").Gamma;
 const GeneralizedPareto = @import("distributions/GeneralizedPareto.zig").GeneralizedPareto;
 
-const DiscreteUniform = @import("Distributions/DiscreteUniform.zig").DiscreteUniform;
+const DiscreteUniform = @import("distributions/DiscreteUniform.zig").DiscreteUniform;
 const Categorical = @import("distributions/Categorical.zig").Categorical;
 const ECDF = @import("distributions/ECDF.zig").ECDF;
 
