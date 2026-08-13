@@ -24,6 +24,7 @@ const unions = @import("UnionDist.zig");
 pub const ContinuousDistribution = unions.ContinuousDistribution;
 pub const DiscreteDistribution = unions.DiscreteDistribution;
 pub const NonNegativeContinuousDistribution = unions.NonNegativeContinuousDistribution;
+pub const PositiveContinuousDistribution = unions.PositiveContinuousDistribution;
 
 const testing = std.testing;
 
