@@ -210,7 +210,7 @@ test "ContinuousDistribution" {
         switch (d.*) {
             .constant => |c| try expect(c.value == 1),
             .exponential => |e| try expect(e.rate == 2),
-            .normal => |n| try expect(n.mean == 5 and n.variance == 2),
+            .normal => |n| try expect(n.mean == 5 and n.sd == 2),
             .pareto => |p| try expect(p.scale == 1 and p.shape == 1.5),
             .uniform => |u| try expect(u.min == 3 and u.max == 4),
             .ecdf => |e| try expect(e.bins.len == 3),

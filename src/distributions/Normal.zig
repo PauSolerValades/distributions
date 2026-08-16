@@ -19,7 +19,7 @@ pub fn Normal(comptime Precision: type) type {
         pub const PDist = Distribution(Precision);
 
         mean: Precision,
-        variance: Precision,
+        sd: Precision,
         interface: PDist,
 
         unif: Uniform(Precision),
@@ -27,7 +27,7 @@ pub fn Normal(comptime Precision: type) type {
         /// Uses Ziggurat
         pub fn sample(self: *const Self, rng: Random) Precision {
             const u: Precision = ziggurat(Precision, rng, &table.NormalTable(Precision), pdfStandard, zeroCase, true);
-            return (u * self.variance) + self.mean;
+            return (u * self.sd) + self.mean;
         }
 
         pub fn sampleImpl(dist: *const Distribution(Precision), rng: Random) Precision {
@@ -35,15 +35,23 @@ pub fn Normal(comptime Precision: type) type {
             return self.sample(rng);
         }
 
-        pub fn init(mean: Precision, variance: Precision) @This() {
+        /// R convention: dnorm(x, mean, sd)
+        pub fn init(mean: Precision, sd: Precision) @This() {
+            std.debug.assert(sd >= 0);
             return .{
                 .mean = mean,
-                .variance = variance,
+                .sd = sd,
                 .unif = .init(0, 1, Interval.oo),
                 .interface = PDist{
                     .vtable = &.{ .sample = sampleImpl, .format = formatImpl },
                 },
             };
+        }
+
+        /// Pre-R-convention constructor kept for callers holding a variance.
+        pub fn initVariance(mean: Precision, variance: Precision) @This() {
+            std.debug.assert(variance >= 0);
+            return init(mean, @sqrt(variance));
         }
 
         pub fn zeroCase(rng: Random, u: Precision) Precision {
@@ -72,17 +80,17 @@ pub fn Normal(comptime Precision: type) type {
             return (1.0 / @sqrt(2 * pi)) * exp(-(x * x) / 2.0);
         }
 
-        pub fn normPdf(mean: Precision, variance: Precision, x: Precision) Precision {
+        pub fn normPdf(mean: Precision, sd: Precision, x: Precision) Precision {
             const pi = std.math.pi;
             const exp = std.math.exp;
 
-            const coefficient = 1 / (@sqrt(2 * pi * variance));
-            const exponent = -(x - mean) * (x - mean) / (2.0 * variance);
+            const coefficient = 1 / (sd * @sqrt(2 * pi));
+            const exponent = -(x - mean) * (x - mean) / (2.0 * sd * sd);
             return coefficient * exp(exponent);
         }
 
         pub fn pdf(self: *const Self, x: Precision) Precision {
-            return normPdf(self.mean, self.variance, x);
+            return normPdf(self.mean, self.sd, x);
         }
 
         fn cdfStandard(x: f64) f64 {
@@ -102,14 +110,14 @@ pub fn Normal(comptime Precision: type) type {
             return 1.0 - pdfStandard(x) * poly;
         }
 
-        pub fn normCdf(mean: Precision, variance: Precision, x: Precision) Precision {
-            const z = (x - mean) / @sqrt(variance);
+        pub fn normCdf(mean: Precision, sd: Precision, x: Precision) Precision {
+            const z = (x - mean) / sd;
             return cdfStandard(z);
         }
 
         /// Instance method for your anytype ksTestCont
         pub fn cdf(self: *const Self, x: Precision) Precision {
-            return normCdf(self.mean, self.variance, x);
+            return normCdf(self.mean, self.sd, x);
         }
 
         fn formatImpl(dist: *const PDist, writer: *Io.Writer) !void {
@@ -118,7 +126,7 @@ pub fn Normal(comptime Precision: type) type {
         }
 
         pub fn format(self: *const Self, writer: *Io.Writer) !void {
-            try writer.print("Normal{{μ={d:.2}, σ²={d:.2}}}", .{ self.mean, self.variance });
+            try writer.print("Normal{{μ={d:.2}, σ={d:.2}}}", .{ self.mean, self.sd });
         }
     };
 }

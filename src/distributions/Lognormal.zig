@@ -34,7 +34,7 @@ pub fn Lognormal(comptime Precision: type) type {
             return .{
                 .mean = mean,
                 .variance = variance,
-                .norm = Normal(Precision).init(mean, variance),
+                .norm = Normal(Precision).initVariance(mean, variance),
                 .interface = PDist{
                     .vtable = &.{ .sample = sampleImpl, .format = formatImpl },
                 },
