@@ -30,6 +30,12 @@ pub fn Gamma(comptime Precision: type) type {
             } }, .norm = Normal(Precision).init(0, 1) };
         }
 
+        /// Pre-R-convention constructor: takes the scale theta = 1/rate.
+        pub fn initScale(shape: Precision, scale: Precision) @This() {
+            assert(scale > 0 and !math.isNan(scale) and !math.isInf(scale));
+            return init(shape, 1.0 / scale);
+        }
+
         /// Marsaglia & Tsang; for shape < 1 boost to (shape + 1) and thin with u^(1/k)
         pub fn sample(self: *const Self, rng: Random) Precision {
             const eff_shape = if (self.shape < 1) 1 + self.shape else self.shape;
