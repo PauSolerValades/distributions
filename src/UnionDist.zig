@@ -216,7 +216,7 @@ test "ContinuousDistribution" {
             .ecdf => |e| try expect(e.bins.len == 3),
             .lognorm => |l| try expect(l.meanlog == 0 and l.sdlog == 1),
             .weibull => |w| try expect(w.scale == 2 and w.shape == 3),
-            .gamma => |g| try expect(g.shape == 2 and g.scale == 2),
+            .gamma => |g| try expect(g.shape == 2 and g.rate == 2),
             .gpareto => |g| try expect(g.location == 1 and g.scale == 1 and g.shape == 0.5),
         }
     }
@@ -278,7 +278,7 @@ test "NonNegativeContinuousDistribution" {
             .uniform => |u| try expect(u.min == 0 and u.max == 2),
             .lognormal => |l| try expect(l.meanlog == 0 and l.sdlog == 1),
             .weibull => |w| try expect(w.scale == 2 and w.shape == 3),
-            .gamma => |g| try expect(g.shape == 2 and g.scale == 2),
+            .gamma => |g| try expect(g.shape == 2 and g.rate == 2),
             .pareto => |p| try expect(p.scale == 1 and p.shape == 1.5),
             .gpareto => |g| try expect(g.location == 0 and g.scale == 1 and g.shape == 0.5),
             .exponential => |e| try expect(e.rate == 2),
@@ -308,7 +308,7 @@ test "PositiveContinuousDistribution" {
     for (&cases) |*d| {
         switch (d.*) {
             .lognormal => |l| try expect(l.meanlog == 0 and l.sdlog == 1),
-            .gamma => |g| try expect(g.shape == 2 and g.scale == 2),
+            .gamma => |g| try expect(g.shape == 2 and g.rate == 2),
             .pareto => |p| try expect(p.scale == 1 and p.shape == 1.5),
             .constant => |c| try expect(c.value == 3),
             .uniform => |u| try expect(u.min == 0 and u.max == 2),

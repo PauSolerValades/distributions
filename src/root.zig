@@ -166,7 +166,7 @@ test "smoke: all distributions compile and sample" {
 
     // Gamma f64
     {
-        const gm = Gamma(f64).init(2.0, 1.5);
+        const gm = Gamma(f64).init(2.0, 2.0/3.0); // rate=2/3 <=> θ=1.5
         try testing.expect(gm.sample(rng) > 0);
         try testing.expect(gm.interface.sample(rng) > 0);
         // F(k*θ) ≈ 0.59 for Gamma(k=2, θ=1.5); exact: P(2, 2) = 1 − 3e^(−2)

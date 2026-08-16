@@ -7,8 +7,8 @@ const assert = std.debug.assert;
 const Distribution = @import("../Distribution.zig").Distribution;
 const Normal = @import("Normal.zig").Normal;
 
-/// Implements the gamma distribution with shape $k$ and scale $theta$.
-/// $ f(x) = x^(k-1) * e^(-x/theta) / (Gamma(k) * theta^k) $
+/// Implements the gamma distribution with shape $k$ and rate $beta$ (R convention).
+/// $ f(x) = beta^k * x^(k-1) * e^(-beta*x) / Gamma(k) $
 /// Sampling uses the Marsaglia–Tsang method.
 pub fn Gamma(comptime Precision: type) type {
     return struct {
@@ -16,14 +16,15 @@ pub fn Gamma(comptime Precision: type) type {
         pub const PDist = Distribution(Precision);
 
         shape: Precision, // k
-        scale: Precision, // theta
+        rate: Precision, // beta = 1/theta
         interface: PDist,
         norm: Normal(Precision),
 
-        pub fn init(shape: Precision, scale: Precision) @This() {
+        /// R convention: dgamma(x, shape, rate)
+        pub fn init(shape: Precision, rate: Precision) @This() {
             assert(shape > 0 and !math.isNan(shape) and !math.isInf(shape));
-            assert(scale > 0 and !math.isNan(scale) and !math.isInf(scale));
-            return .{ .shape = shape, .scale = scale, .interface = PDist{ .vtable = &.{
+            assert(rate > 0 and !math.isNan(rate) and !math.isInf(rate));
+            return .{ .shape = shape, .rate = rate, .interface = PDist{ .vtable = &.{
                 .sample = sampleImpl,
                 .format = formatImpl,
             } }, .norm = Normal(Precision).init(0, 1) };
@@ -54,7 +55,7 @@ pub fn Gamma(comptime Precision: type) type {
                 if (@log(u) < 0.5 * x * x + d * (1 - v + @log(v))) break;
             }
 
-            var result = self.scale * d * v;
+            var result = d * v / self.rate;
 
             if (self.shape < 1) {
                 result *= math.pow(Precision, rng.float(Precision), 1 / self.shape);
@@ -73,12 +74,12 @@ pub fn Gamma(comptime Precision: type) type {
             assert(x >= 0);
 
             if (x == 0) {
-                if (self.shape == 1) return -@log(self.scale);
+                if (self.shape == 1) return @log(self.rate);
                 return if (self.shape < 1) math.inf(Precision) else -math.inf(Precision);
             }
 
-            return (self.shape - 1) * @log(x) - x / self.scale -
-                self.shape * @log(self.scale) - math.lgamma(Precision, self.shape);
+            return (self.shape - 1) * @log(x) - x * self.rate +
+                self.shape * @log(self.rate) - math.lgamma(Precision, self.shape);
         }
 
         pub fn pdf(self: *const Self, x: Precision) Precision {
@@ -88,7 +89,7 @@ pub fn Gamma(comptime Precision: type) type {
 
         pub fn cdf(self: *const Self, x: Precision) Precision {
             if (x <= 0) return 0;
-            return gammaP(self.shape, x / self.scale);
+            return gammaP(self.shape, x * self.rate);
         }
 
         /// Regularized lower incomplete gamma P(a, x): series for x < a+1,
@@ -138,7 +139,7 @@ pub fn Gamma(comptime Precision: type) type {
         }
 
         pub fn format(self: *const Self, writer: *Io.Writer) !void {
-            try writer.print("Gamma{{α={d:.2}, θ={d:.2}}}", .{ self.shape, self.scale });
+            try writer.print("Gamma{{α={d:.2}, β={d:.2}}}", .{ self.shape, self.rate });
         }
     };
 }

@@ -129,7 +129,7 @@ pub fn main(init: std.process.Init) !void {
         try stdout_writer.print("  [PASS] Null not rejected. Sampler is accurate. D={d:.4}\n", .{Dn_weibull});
     }
 
-    const gamma: Gamma(f64) = Gamma(f64).init(2.0, 1.5);
+    const gamma: Gamma(f64) = Gamma(f64).init(2.0, 1.0/1.5);
     const dgamma = &gamma.interface;
 
     var sample_gamma: [n_samples]f64 = undefined;
