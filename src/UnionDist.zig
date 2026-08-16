@@ -199,7 +199,7 @@ test "ContinuousDistribution" {
         .{ .uniform = Uniform(f64).init(3, 4, .cc) },
         .{ .ecdf = ecdf },
         .{ .lognorm = Lognormal(f64).init(0, 1) },
-        .{ .weibull = Weibull(f64).init(2, 3) },
+        .{ .weibull = Weibull(f64).init(3, 2) },
         .{ .gamma = Gamma(f64).init(2, 2) },
         .{ .gpareto = GeneralizedPareto(f64).init(1, 1, 0.5) },
     };
@@ -263,7 +263,7 @@ test "NonNegativeContinuousDistribution" {
         .{ .constant = Constant(f64).init(0) },
         .{ .uniform = Uniform(f64).init(0, 2, .cc) },
         .{ .lognormal = Lognormal(f64).init(0, 1) },
-        .{ .weibull = Weibull(f64).init(2, 3) },
+        .{ .weibull = Weibull(f64).init(3, 2) },
         .{ .gamma = Gamma(f64).init(2, 2) },
         .{ .pareto = Pareto(f64).init(1, 1.5) },
         .{ .gpareto = GeneralizedPareto(f64).init(0, 1, 0.5) },

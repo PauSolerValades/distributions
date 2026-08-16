@@ -158,7 +158,7 @@ test "smoke: all distributions compile and sample" {
 
     // Weibull f64
     {
-        const wb = Weibull(f64).init(1.0, 2.0);
+        const wb = Weibull(f64).init(2.0, 1.0);
         try testing.expectApproxEqRel(0.6982549119369307, wb.sample(rng), 1e-14);
         // F(1) = 1 − e^(−1) for Weibull(λ=1, k=2)
         try testing.expectApproxEqRel(0.6321205588285577, wb.cdf(1.0), 1e-14);

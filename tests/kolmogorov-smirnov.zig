@@ -113,7 +113,7 @@ pub fn main(init: std.process.Init) !void {
         try stdout_writer.print("  [PASS] Null not rejected. Sampler is accurate. D={d:.4}\n", .{Dn_lognorm});
     }
 
-    const weibull: Weibull(f64) = Weibull(f64).init(1.0, 2.0);
+    const weibull: Weibull(f64) = Weibull(f64).init(2.0, 1.0);
     const dweibull = &weibull.interface;
 
     var sample_weibull: [n_samples]f64 = undefined;

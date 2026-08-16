@@ -26,7 +26,8 @@ pub fn Weibull(comptime Precision: type) type {
         shape: Precision, // k
         interface: PDist,
 
-        pub fn init(scale: Precision, shape: Precision) @This() {
+        /// R convention: dweibull(x, shape, scale)
+        pub fn init(shape: Precision, scale: Precision) @This() {
             assert(scale > 0);
             assert(shape > 0);
             return .{ .scale = scale, .shape = shape, .interface = PDist{ .vtable = &.{
