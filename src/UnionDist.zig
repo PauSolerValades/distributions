@@ -195,7 +195,7 @@ test "ContinuousDistribution" {
         .{ .constant = Constant(f64).init(1) },
         .{ .exponential = Exponential(f64).init(2) },
         .{ .normal = Normal(f64).init(5, 2) },
-        .{ .pareto = Pareto(f64).init(1, 1.5) },
+        .{ .pareto = Pareto(f64).init(1.5, 1) },
         .{ .uniform = Uniform(f64).init(3, 4, .cc) },
         .{ .ecdf = ecdf },
         .{ .lognorm = Lognormal(f64).init(0, 1) },
@@ -265,7 +265,7 @@ test "NonNegativeContinuousDistribution" {
         .{ .lognormal = Lognormal(f64).init(0, 1) },
         .{ .weibull = Weibull(f64).init(3, 2) },
         .{ .gamma = Gamma(f64).init(2, 2) },
-        .{ .pareto = Pareto(f64).init(1, 1.5) },
+        .{ .pareto = Pareto(f64).init(1.5, 1) },
         .{ .gpareto = GeneralizedPareto(f64).init(0, 1, 0.5) },
         .{ .exponential = Exponential(f64).init(2) },
     };
@@ -297,7 +297,7 @@ test "PositiveContinuousDistribution" {
     const cases = [_]U{
         .{ .lognormal = Lognormal(f64).init(0, 1) },
         .{ .gamma = Gamma(f64).init(2, 2) },
-        .{ .pareto = Pareto(f64).init(1, 1.5) },
+        .{ .pareto = Pareto(f64).init(1.5, 1) },
         .{ .constant = Constant(f64).init(3) },
         .{ .uniform = Uniform(f64).init(0, 2, .oo) }, // min=0 legal: .oo never yields exactly min
         .{ .gpareto = GeneralizedPareto(f64).init(1, 1, 0.5) },

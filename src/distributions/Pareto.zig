@@ -37,7 +37,8 @@ pub fn Pareto(comptime Precision: type) type {
             return self.sample(rng);
         }
 
-        pub fn init(scale: Precision, shape: Precision) @This() {
+        /// R convention: actuar::dpareto(x, shape, scale)
+        pub fn init(shape: Precision, scale: Precision) @This() {
             assert(shape >= 0);
             assert(scale >= 0);
             return .{
