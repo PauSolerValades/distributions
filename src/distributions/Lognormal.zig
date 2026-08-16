@@ -14,8 +14,8 @@ pub fn Lognormal(comptime Precision: type) type {
         pub const Self = @This();
         pub const PDist = Distribution(Precision);
 
-        mean: Precision, // mu
-        variance: Precision, // sigma
+        meanlog: Precision, // mu
+        sdlog: Precision, // sigma
         interface: PDist,
         norm: Normal(Precision),
 
@@ -29,12 +29,13 @@ pub fn Lognormal(comptime Precision: type) type {
             return self.sample(rng);
         }
 
-        pub fn init(mean: Precision, variance: Precision) @This() {
-            assert(variance >= 0);
+        /// R convention: dlnorm(x, meanlog, sdlog)
+        pub fn init(meanlog: Precision, sdlog: Precision) @This() {
+            assert(sdlog >= 0);
             return .{
-                .mean = mean,
-                .variance = variance,
-                .norm = Normal(Precision).initVariance(mean, variance),
+                .meanlog = meanlog,
+                .sdlog = sdlog,
+                .norm = Normal(Precision).init(meanlog, sdlog),
                 .interface = PDist{
                     .vtable = &.{ .sample = sampleImpl, .format = formatImpl },
                 },
@@ -47,7 +48,7 @@ pub fn Lognormal(comptime Precision: type) type {
         }
 
         pub fn format(self: *const Self, writer: *Io.Writer) !void {
-            try writer.print("Lognormal{{μ={d:.2}, σ²={d:.2}}}", .{ self.mean, self.variance });
+            try writer.print("Lognormal{{μ={d:.2}, σ={d:.2}}}", .{ self.meanlog, self.sdlog });
         }
         pub fn cdf(self: *const Self, x: Precision) Precision {
             if (x <= 0) return 0;
